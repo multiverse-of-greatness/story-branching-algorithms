@@ -52,6 +52,9 @@ def story_until_choices_opportunity_prompt(story_so_far: str, num_choices=3, gam
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}
 
+# Plot information
+{plot_information}
+
 # The story so far
 {story_so_far}"""
 
@@ -66,6 +69,9 @@ def story_based_on_selected_choice_prompt(story_so_far: str, selected_choice: st
 "story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}
+
+# Plot information
+{plot_information}
 
 # The story so far
 {story_so_far}
@@ -84,6 +90,9 @@ def story_until_chapter_end_prompt(story_so_far: str, game_genre="visual novel")
 "story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}]
 }}
 
+# Plot information
+{plot_information}
+
 # The story so far
 {story_so_far}"""
 
@@ -97,6 +106,9 @@ def story_until_game_end_prompt(story_so_far: str, selected_ending: str, game_ge
 "story_so_far": story so far,
 "story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
 }}
+
+# Plot information
+{plot_information}
 
 # The story so far
 {story_so_far}
