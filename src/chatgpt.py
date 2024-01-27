@@ -2,15 +2,12 @@ import json
 from pathlib import Path
 from time import sleep
 
-from openai import OpenAI, Timeout, APIConnectionError, APIError, RateLimitError
-from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam, \
-    ChatCompletionAssistantMessageParam
+from openai import OpenAI, APITimeoutError, APIConnectionError, APIError, RateLimitError
 
-type ConversationHistory = list[ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam |
-                                ChatCompletionAssistantMessageParam]
+from .utils import parse_json_string, ConversationHistory
 
 
-def chatgpt(messages: ConversationHistory) -> str:
+def chatgpt(messages: ConversationHistory) -> tuple[str, dict]:
     client = OpenAI(timeout=60)
     try:
         response = client.chat.completions.create(
@@ -31,8 +28,13 @@ def chatgpt(messages: ConversationHistory) -> str:
         with open(chatgpt_path, 'w') as f:
             f.write(json.dumps(responses, indent=2))
 
-        return response.choices[0].message.content
-    except Timeout as e:
+        content = response.choices[0].message.content
+        return content, parse_json_string(response.choices[0].message.content)
+    except (ValueError, json.decoder.JSONDecodeError) as e:
+        print(f"OpenAI API response could not be decoded as JSON: {e}")
+        sleep(3)
+        return chatgpt(messages)
+    except APITimeoutError as e:
         print(f"OpenAI API request timed out: {e}")
         sleep(3)
         return chatgpt(messages)

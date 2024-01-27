@@ -2,9 +2,12 @@ import json
 import re
 import typing
 
-from .chatgpt import ConversationHistory
+from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam, \
+    ChatCompletionAssistantMessageParam
 
 type OpenAIRole = typing.Union["user", "assistant", "system"]
+type ConversationHistory = list[ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam |
+                                ChatCompletionAssistantMessageParam]
 
 
 def format_openai_message(message: str,

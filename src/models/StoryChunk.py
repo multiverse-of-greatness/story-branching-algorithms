@@ -40,7 +40,7 @@ class StoryChunk:
             raise ValueError('current_history is None')
 
         session.run(
-            '''CREATE (storyChunk:StoryChunk {id: $id, story_so_far: $story_so_far, chapter: $chapter 
+            '''CREATE (storyChunk:StoryChunk {id: $id, story_so_far: $story_so_far, chapter: $chapter, 
             current_history: $current_history})''',
             id=self.id, story_so_far=self.story_so_far, chapter=self.chapter, current_history=json.dumps(self.current_history)
         )

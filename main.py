@@ -16,12 +16,10 @@ from src.models.StoryData import StoryData
 from src.models.story.StoryChoice import StoryChoice
 from src.prompts import get_plot_prompt, get_story_until_choices_opportunity_prompt, \
     story_based_on_selected_choice_prompt, story_until_chapter_end_prompt, story_until_game_end_prompt
-from src.utils import format_openai_message, parse_json_string
+from src.utils import format_openai_message
 
 
-# TODO: Escape special characters for all queries in all DBModels
 # TODO: Automatically rolling window story so far in case the token limit exceed (do it in chatgpt -> use tiktoken)
-# TODO: Retry when error by ChatGPT
 
 # TODO: Put back the parameters
 """game_genre: Annotated[Optional[str], typer.Option(help="Game genre")] = 'visual novel',
@@ -76,8 +74,7 @@ def main(
             'histories': [history]
         }, indent=2))
 
-    story_data_raw = chatgpt(history)
-    story_data_obj = parse_json_string(story_data_raw)
+    story_data_raw, story_data_obj = chatgpt(history)
     story_data_obj['id'] = story_id
     story_data = StoryData.from_json(story_data_obj)
     neo4j_connector.write(story_data)
@@ -144,8 +141,7 @@ def close_timeline(config, current_chapter, frontiers, neo4j_connector, output_p
         histories['histories'].append(history)
         file.write(json.dumps(histories, indent=2))
 
-    story_chunk_raw = chatgpt(history)
-    story_chunk_obj = parse_json_string(story_chunk_raw)
+    story_chunk_raw, story_chunk_obj = chatgpt(history)
     story_chunk_obj['chapter'] = current_chapter
     story_chunk_obj['choices'] = []
     story_chunk = StoryChunk.from_json(story_chunk_obj)
@@ -192,8 +188,7 @@ def branch_story(config, current_chapter, frontiers, initial_history, neo4j_conn
         histories['histories'].append(history)
         file.write(json.dumps(histories, indent=2))
 
-    story_chunk_raw = chatgpt(history)
-    story_chunk_obj = parse_json_string(story_chunk_raw)
+    story_chunk_raw, story_chunk_obj = chatgpt(history)
     story_chunk_obj['chapter'] = current_chapter
     story_chunk = StoryChunk.from_json(story_chunk_obj)
 
