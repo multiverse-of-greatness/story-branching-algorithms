@@ -1,5 +1,7 @@
 import json
 import random
+import copy
+import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -34,6 +36,11 @@ from src.utils import format_openai_message
             Optional[int], typer.Option(help="Minimum number of choice opportunities per chapter")] = 3,
         max_num_choices_opportunity: Annotated[
             Optional[int], typer.Option(help="Maximum number of choice opportunities per chapter")] = 5"""
+
+
+BRANCHING = 0
+CHAPTER_END = 1
+GAME_END = 2
 
 
 def main(
@@ -79,7 +86,7 @@ def main(
     story_data = StoryData.from_json(story_data_obj)
     neo4j_connector.write(story_data)
 
-    history = format_openai_message(story_data_raw, role="assistant", history=history)
+    initial_history = format_openai_message(story_data_raw, role="assistant", history=history)
     logger.debug("End story plot generation")
 
     with open(output_path / 'plot.json', 'w') as file:
@@ -88,137 +95,59 @@ def main(
             "parsed": story_data_obj
         }, indent=2))
 
-    frontiers = []
-    for current_chapter in range(1, config.num_chapters + 1):
-        logger.debug(f"Start story generation for chapter {current_chapter}")
-        num_choices_opportunity = random.randint(config.min_num_choices_opportunity, config.max_num_choices_opportunity)
-        logger.info(f"Number of choice opportunities for chapter {current_chapter}: {num_choices_opportunity}")
+    queue: list[tuple[int, int, StoryChunk, StoryChoice]] = []
+    queue.append((1, 0, None, None))
+    cnt = 0       # TODO: remove
+    while queue:
+        cnt += 1  # TODO: remove
+        chapter, num_opp, parent_chunk, choice = queue.pop(0)
 
-        visited_in_last_opp = []
-        for used_opportunity in range(num_choices_opportunity):
-            num_choices = random.randint(config.min_num_choices, config.max_num_choices)
-            logger.info(
-                f"Number of choices for chapter {current_chapter} and opportunity {used_opportunity}: {num_choices}")
+        if not choice:
+            if num_opp == 0:                                         # First chunk of the chapter
+                num_choices = random.randint(config.min_num_choices, config.max_num_choices)
+                prompt = get_story_until_choices_opportunity_prompt(config, story_data, num_choices, num_opp, chapter)
+                history = format_openai_message(prompt, history=initial_history if not parent_chunk else parent_chunk.current_history)
+                state = BRANCHING
+            elif num_opp == config.max_num_choices_opportunity:
+                if chapter == config.num_chapters:                   # End of game
+                    prompt = story_until_game_end_prompt(config, story_data, parent_chunk)
+                    history = format_openai_message(prompt, history=parent_chunk.current_history)
+                    state = GAME_END
+                else:                                                # End of chapter
+                    prompt = story_until_chapter_end_prompt(config, story_data, parent_chunk)
+                    history = format_openai_message(prompt, history=parent_chunk.current_history)
+                    state = CHAPTER_END
+        else:   # Branch to a choice
+            prompt = story_based_on_selected_choice_prompt(config, choice)
+            history = format_openai_message(prompt, history=parent_chunk.current_history)
+            state = BRANCHING
+        
+        logger.debug(f"Current chapter: {chapter}, num_opp: {num_opp}, state: {state}, choice: {choice}")
 
-            if len(frontiers) == 0:
-                branch_story(config, current_chapter, frontiers, history, neo4j_connector, num_choices, output_path,
-                             story_data, used_opportunity)
+        story_chunk_raw, story_chunk_obj = chatgpt(history)
+        story_chunk_obj['id'] = str(uuid.uuid1())
+        story_chunk_obj['chapter'] = chapter
+        story_chunk = StoryChunk.from_json(story_chunk_obj)
+        history = format_openai_message(story_chunk_raw, role="assistant", history=history)
+        story_chunk.current_history = copy.deepcopy(history)
+        
+        neo4j_connector.write(story_chunk)
+        if not parent_chunk:
+            neo4j_connector.with_session(story_data.add_story_chunk_to_db, story_chunk)
+        else:
+            neo4j_connector.with_session(parent_chunk.branched_timeline_to_db, story_chunk, choice)
 
-            temp = []
-            while len(frontiers) > 0:
-                story_chunk, choice = frontiers.pop(0)
-                branch_story(config, current_chapter, temp, history, neo4j_connector, num_choices, output_path,
-                             story_data, used_opportunity, story_chunk, choice)
+        if state is BRANCHING and num_opp < config.max_num_choices_opportunity:        # Branch to multiple choices
+            for choice in story_chunk.choices:
+                queue.append((chapter, num_opp + 1, story_chunk, choice))
+        elif state is BRANCHING and num_opp == config.max_num_choices_opportunity:     # Branch to the end of chapter
+            queue.append((chapter, num_opp, story_chunk, None))
+        elif state is CHAPTER_END and chapter < config.num_chapters:                   # Branch to the next chapter
+            queue.append((chapter + 1, 0, story_chunk, None))
+        elif state is CHAPTER_END and chapter == config.num_chapters:                  # Branch to the end of game
+            queue.append((chapter, num_opp, story_chunk, None))
 
-            if used_opportunity == num_choices_opportunity - 1:
-                visited_in_last_opp = temp
-            else:
-                frontiers = temp
-
-        while len(visited_in_last_opp) > 0:
-            story_chunk, choice = visited_in_last_opp.pop(0)
-            ending_type = "game" if current_chapter == num_chapters - 1 else "chapter"
-            close_timeline(config, current_chapter, frontiers, neo4j_connector, output_path, story_data, story_chunk,
-                           ending_type)
-
-
-def close_timeline(config, current_chapter, frontiers, neo4j_connector, output_path,
-                   story_data, current_chunk: StoryChunk, ending_type: str = "chapter"):
-    logger.debug(f"Start story generation for chapter {current_chapter} for a {ending_type} ending.")
-    if ending_type == "chapter":
-        end_chunk_prompt = story_until_chapter_end_prompt(config, story_data, current_chunk)
-    elif ending_type == "game":
-        end_chunk_prompt = story_until_game_end_prompt(config, story_data, current_chunk)
-    else:
-        raise ValueError(f"Invalid ending type: {ending_type}")
-
-    history = current_chunk.current_history
-    history = format_openai_message(end_chunk_prompt, history=history)
-
-    with open(output_path / 'histories.json', 'r+') as file:
-        histories = json.load(file)
-        file.seek(0)
-        histories['histories'].append(history)
-        file.write(json.dumps(histories, indent=2))
-
-    story_chunk_raw, story_chunk_obj = chatgpt(history)
-    story_chunk_obj['chapter'] = current_chapter
-    story_chunk_obj['choices'] = []
-    story_chunk = StoryChunk.from_json(story_chunk_obj)
-
-    history = format_openai_message(story_chunk_raw, role="assistant", history=history)
-    story_chunk.current_history = history
-
-    neo4j_connector.write(story_chunk)
-    neo4j_connector.with_session(current_chunk.branched_timeline_to_db, story_chunk)
-
-    logger.debug(f"End story generation for chapter {current_chapter}")
-
-    story_path = output_path / 'story.json'
-    stories = {"story": []}
-    if story_path.exists():
-        with open(story_path, 'r') as file:
-            stories = json.load(file)
-    stories['story'].append({
-        "chapter": current_chapter,
-        "chunk": -1,
-        "raw": story_chunk_raw,
-        "parsed": story_chunk_obj
-    })
-    with open(story_path, 'w') as file:
-        file.write(json.dumps(stories, indent=2))
-
-
-def branch_story(config, current_chapter, frontiers, initial_history, neo4j_connector, num_choices, output_path,
-                 story_data, used_opportunity, current_chunk: StoryChunk = None, choice: StoryChoice = None):
-    logger.debug(f"Start story generation for chapter {current_chapter} and opportunity {used_opportunity}")
-    logger.debug(f"Based on choice: {choice}")
-    if choice is None:
-        story_chunk_choice = get_story_until_choices_opportunity_prompt(config, story_data, num_choices,
-                                                                        used_opportunity, current_chapter)
-        history = format_openai_message(story_chunk_choice, history=initial_history)
-    else:
-        story_chunk_choice = story_based_on_selected_choice_prompt(config, choice)
-        history = current_chunk.current_history
-        history = format_openai_message(story_chunk_choice, history=history)
-
-    with open(output_path / 'histories.json', 'r+') as file:
-        histories = json.load(file)
-        file.seek(0)
-        histories['histories'].append(history)
-        file.write(json.dumps(histories, indent=2))
-
-    story_chunk_raw, story_chunk_obj = chatgpt(history)
-    story_chunk_obj['chapter'] = current_chapter
-    story_chunk = StoryChunk.from_json(story_chunk_obj)
-
-    history = format_openai_message(story_chunk_raw, role="assistant", history=history)
-    story_chunk.current_history = history
-
-    neo4j_connector.write(story_chunk)
-    if choice is None:
-        neo4j_connector.with_session(story_data.add_story_chunk_to_db, story_chunk)
-    else:
-        neo4j_connector.with_session(current_chunk.branched_timeline_to_db, story_chunk, choice)
-
-    logger.debug(f"End story generation for chapter {current_chapter}")
-
-    story_path = output_path / 'story.json'
-    stories = {"story": []}
-    if story_path.exists():
-        with open(story_path, 'r') as file:
-            stories = json.load(file)
-    stories['story'].append({
-        "chapter": current_chapter,
-        "chunk": used_opportunity,
-        "raw": story_chunk_raw,
-        "parsed": story_chunk_obj
-    })
-    with open(story_path, 'w') as file:
-        file.write(json.dumps(stories, indent=2))
-
-    for choice in story_chunk.choices:
-        frontiers.append((story_chunk, choice))
+    logger.debug(f"Total number of chunks: {cnt}")   # TODO: remove
 
 
 if __name__ == '__main__':

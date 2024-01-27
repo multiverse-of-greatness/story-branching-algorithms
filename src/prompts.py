@@ -61,7 +61,7 @@ Currently used: {used_opportunity} out of {config.max_num_choices_opportunity} f
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
+"narratives": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}"""
 
@@ -73,7 +73,7 @@ def story_based_on_selected_choice_prompt(config: GenerationConfig, selected_cho
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
+"narratives": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}
 
@@ -88,14 +88,14 @@ def story_until_chapter_end_prompt(config: GenerationConfig, story_data: StoryDa
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}]
+"narratives": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}]
 }}
 
 # The story so far
 {story_chunk.story_so_far}
 
 # Next chapter synopsis
-{story_data.chapter_synopses[story_chunk.chapter + 1].synopsis}"""
+{story_data.chapter_synopses[story_chunk.chapter].synopsis}"""
 
 
 def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData, story_chunk: StoryChunk) -> str:
@@ -106,7 +106,7 @@ def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData,
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
+"narratives": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
 }}
 
 # The story so far

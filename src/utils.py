@@ -1,11 +1,11 @@
 import json
 import re
-import typing
+from typing import Union
 
 from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam, \
     ChatCompletionAssistantMessageParam
 
-type OpenAIRole = typing.Union["user", "assistant", "system"]
+type OpenAIRole = Union["user", "assistant", "system"]
 type ConversationHistory = list[ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam |
                                 ChatCompletionAssistantMessageParam]
 

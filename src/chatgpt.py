@@ -8,7 +8,7 @@ from .utils import parse_json_string, ConversationHistory
 
 
 def chatgpt(messages: ConversationHistory) -> tuple[str, dict]:
-    client = OpenAI(timeout=60)
+    client = OpenAI(timeout=15)
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
@@ -42,12 +42,12 @@ def chatgpt(messages: ConversationHistory) -> tuple[str, dict]:
         print(f"OpenAI API request failed to connect: {e}")
         sleep(3)
         return chatgpt(messages)
-    except APIError as e:
-        print(f"OpenAI API returned an API Error: {e}")
-        sleep(3)
-        return chatgpt(messages)
     except RateLimitError as e:
         print(f"OpenAI API request exceeded rate limit: {e}")
+        sleep(3)
+        return chatgpt(messages)
+    except APIError as e:
+        print(f"OpenAI API returned an API Error: {e}")
         sleep(3)
         return chatgpt(messages)
     except Exception as e:
