@@ -25,20 +25,6 @@ from src.prompts import (
 from src.types import BranchingType
 from src.utils import format_openai_message
 
-# TODO: Put back the parameters
-"""game_genre: Annotated[Optional[str], typer.Option(help="Game genre")] = 'visual novel',
-        themes: Annotated[Optional[list[str]], typer.Option(help="Themes to be provided")] = None,
-        num_chapters: Annotated[Optional[int], typer.Option(help="Number of chapters")] = 3,
-        num_endings: Annotated[Optional[int], typer.Option(help="Number of story ending")] = 3,
-        num_main_characters: Annotated[Optional[int], typer.Option(help="Number of main characters")] = 5,
-        num_main_scenes: Annotated[Optional[int], typer.Option(help="Number of scenes (location)")] = 3,
-        min_num_choices: Annotated[Optional[int], typer.Option(help="Minimum number of choices")] = 2,
-        max_num_choices: Annotated[Optional[int], typer.Option(help="Maximum number of choices")] = 3,
-        min_num_choices_opportunity: Annotated[
-            Optional[int], typer.Option(help="Minimum number of choice opportunities per chapter")] = 3,
-        max_num_choices_opportunity: Annotated[
-            Optional[int], typer.Option(help="Maximum number of choice opportunities per chapter")] = 5"""
-
 
 def main(
     game_genre: Annotated[
@@ -47,30 +33,30 @@ def main(
     themes: Annotated[
         Optional[list[str]], typer.Option(help="Themes to be provided")
     ] = None,
-    num_chapters: Annotated[Optional[int], typer.Option(help="Number of chapters")] = 2,
+    num_chapters: Annotated[Optional[int], typer.Option(help="Number of chapters")] = 3,
     num_endings: Annotated[
         Optional[int], typer.Option(help="Number of story ending")
-    ] = 2,
+    ] = 3,
     num_main_characters: Annotated[
         Optional[int], typer.Option(help="Number of main characters")
-    ] = 3,
+    ] = 5,
     num_main_scenes: Annotated[
         Optional[int], typer.Option(help="Number of scenes (location)")
-    ] = 2,
+    ] = 3,
     min_num_choices: Annotated[
         Optional[int], typer.Option(help="Minimum number of choices")
     ] = 2,
     max_num_choices: Annotated[
         Optional[int], typer.Option(help="Maximum number of choices")
-    ] = 2,
+    ] = 3,
     min_num_choices_opportunity: Annotated[
         Optional[int],
         typer.Option(help="Minimum number of choice opportunities per chapter"),
-    ] = 2,
+    ] = 3,
     max_num_choices_opportunity: Annotated[
         Optional[int],
         typer.Option(help="Maximum number of choice opportunities per chapter"),
-    ] = 2,
+    ] = 5,
 ):
     config = GenerationConfig(
         min_num_choices,
