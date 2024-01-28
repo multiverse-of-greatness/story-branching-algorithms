@@ -1,3 +1,4 @@
+import copy
 import json
 import re
 
@@ -9,6 +10,8 @@ def format_openai_message(message: str,
                           history: ConversationHistory = None) -> ConversationHistory:
     if history is None:
         history = []
+
+    history = copy.deepcopy(history)
 
     history.append({
         "role": role,

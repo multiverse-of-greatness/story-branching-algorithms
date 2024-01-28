@@ -14,10 +14,6 @@ class Neo4JConnector:
         self.password = os.getenv("NEO4J_PASS")
         self.driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))
 
-        # TODO: Remove this
-        with self.driver.session() as session:
-            session.run("MATCH (n) DETACH DELETE n")
-
     @property
     def uri(self):
         return "bolt://{}:{}".format(self.host, self.port)

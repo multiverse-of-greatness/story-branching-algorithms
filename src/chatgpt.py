@@ -18,12 +18,12 @@ def rolling_history(history: ConversationHistory) -> ConversationHistory:
     count_tokens = 0
     new_history = []
     for message in history:
-        count_tokens += len(encoder.encode(message['content']))
+        count_tokens += len(encoder.encode(message["content"]))
 
     if count_tokens > max_tokens * 0.8:
         count_tokens = 0
         for message in history[-1:3:-1]:
-            count_tokens += len(encoder.encode(message['content']))
+            count_tokens += len(encoder.encode(message["content"]))
             if count_tokens > max_tokens * 0.5:
                 break
             new_history.append(message)
@@ -37,21 +37,22 @@ def rolling_history(history: ConversationHistory) -> ConversationHistory:
         return history
 
 
-def chatgpt(messages: ConversationHistory, retry_with: ConversationHistory = None) -> tuple[str, dict]:
-    client = OpenAI(timeout=60,
-                    base_url="https://permitted-nov-neither-icon.trycloudflare.com/v1")  # TODO: Remove base_url
+def chatgpt(
+    messages: ConversationHistory, retry_with: ConversationHistory = None
+) -> tuple[str, dict]:
+    client = OpenAI(
+        timeout=60, base_url="https://permitted-nov-neither-icon.trycloudflare.com/v1"
+    )  # TODO: Remove base_url
 
     if retry_with is not None:
-        fix_json_prompt = fix_invalid_json_prompt(retry_with[-1]['content'])
+        fix_json_prompt = fix_invalid_json_prompt(retry_with[-1]["content"])
         messages = format_openai_message(fix_json_prompt, retry_with)
 
     response = None
     messages = rolling_history(messages)
     try:
         raw_response = client.chat.completions.create(
-            model=os.getenv("GENERATION_MODEL"),
-            messages=messages,
-            seed=42
+            model=os.getenv("GENERATION_MODEL"), messages=messages, seed=42
         )
 
         response = raw_response.choices[0].message.content
@@ -60,12 +61,12 @@ def chatgpt(messages: ConversationHistory, retry_with: ConversationHistory = Non
         responses = {"responses": []}
 
         if chatgpt_path.exists():
-            with open(chatgpt_path, 'r') as f:
+            with open(chatgpt_path, "r") as f:
                 responses = json.load(f)
 
-        responses['responses'].append(response)
+        responses["responses"].append(response)
 
-        with open(chatgpt_path, 'w') as f:
+        with open(chatgpt_path, "w") as f:
             f.write(json.dumps(responses, indent=2))
 
         return response, parse_json_string(response)

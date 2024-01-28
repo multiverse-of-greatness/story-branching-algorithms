@@ -1,3 +1,4 @@
+import json
 from neo4j import Session
 
 from src.db.DBModel import DBModel
@@ -52,40 +53,14 @@ class StoryData(DBModel):
     def save_to_db(self, session: Session):
         session.run(
             '''CREATE (storyData:StoryData {id: $id, title: $title, genre: $genre, themes: $themes, 
-            synopsis: $synopsis, beginning: $beginning})''',
-            id=self.id, title=self.title, genre=self.genre, themes=self.themes,
-            synopsis=self.synopsis, beginning=self.beginning
+            main_scenes: $main_scenes, main_characters: $main_characters, 
+            synopsis: $synopsis, chapter_synopses: $chapter_synopses, 
+            beginning: $beginning, endings: $endings})''',
+            id=self.id, title=self.title, genre=self.genre, themes=self.themes, main_scenes=json.dumps([s.to_json() for s in self.main_scenes]),
+            main_characters=json.dumps([c.to_json() for c in self.main_characters]), synopsis=self.synopsis, 
+            chapter_synopses=json.dumps([c.to_json() for c in self.chapter_synopses]), beginning=self.beginning,
+            endings=json.dumps([e.to_json() for e in self.endings])
         )
-        for scene in self.main_scenes:
-            scene.save_to_db(session)
-            session.run(
-                '''MATCH (storyData:StoryData {id: $story_id}), (sceneData:SceneData {id: $scene_id}) 
-                CREATE (storyData)-[:TAKE_PLACE]->(sceneData)''',
-                story_id=self.id, scene_id=scene.id
-            )
-        for character in self.main_characters:
-            character.save_to_db(session)
-            session.run(
-                '''MATCH (storyData:StoryData {id: $story_id}), (characterData:CharacterData {id: $character_id}) 
-                CREATE (characterData)-[:ACTED_IN]->(storyData)''',
-                story_id=self.id, character_id=character.id
-            )
-
-        for chapter_synopsis in self.chapter_synopses:
-            chapter_synopsis.save_to_db(session)
-            session.run(
-                '''MATCH (storyData:StoryData {id: $story_id}), (chapterSynopsis:ChapterSynopsis {chapter: $chapter}) 
-                CREATE (storyData)-[:HAS]->(chapterSynopsis)''',
-                story_id=self.id, chapter=chapter_synopsis.chapter
-            )
-
-        for ending in self.endings:
-            ending.save_to_db(session)
-            session.run(
-                '''MATCH (storyData:StoryData {id: $story_id}), (endingData:EndingData {id: $ending_id}) 
-                CREATE (storyData)-[:ENDED_WITH]->(endingData)''',
-                story_id=self.id, ending_id=ending.id
-            )
 
     def add_story_chunk_to_db(self, session: Session, story_chunk: StoryChunk):
         session.run(
