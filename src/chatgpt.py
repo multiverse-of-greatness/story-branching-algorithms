@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from time import sleep
 
@@ -8,10 +9,11 @@ from .utils import parse_json_string, ConversationHistory
 
 
 def chatgpt(messages: ConversationHistory) -> tuple[str, dict]:
-    client = OpenAI(timeout=15)
+    client = OpenAI(timeout=60, base_url=os.getenv("OPENAI_BASE_URL"))  # TODO: Remove base_url
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            # model="gpt-3.5-turbo-1106",
+            model="local-model",
             messages=messages,
             seed=42
         )
@@ -29,7 +31,7 @@ def chatgpt(messages: ConversationHistory) -> tuple[str, dict]:
             f.write(json.dumps(responses, indent=2))
 
         content = response.choices[0].message.content
-        return content, parse_json_string(response.choices[0].message.content)
+        return content, parse_json_string(content)
     except (ValueError, json.decoder.JSONDecodeError) as e:
         print(f"OpenAI API response could not be decoded as JSON: {e}")
         sleep(3)

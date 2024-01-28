@@ -8,20 +8,21 @@ from .story.StoryNarrative import StoryNarrative
 
 
 class StoryChunk:
-    def __init__(self, id: str, chapter: int, story_so_far: str, narratives: list[StoryNarrative], 
+    def __init__(self, id: str, chapter: int, story_so_far: str, story: list[StoryNarrative], 
                  choices: list[StoryChoice]):
         self.id = id
         self.chapter = chapter
         self.story_so_far = story_so_far
-        self.narratives = narratives
+        self.story = story
         self.choices = choices
-        self.current_history: ConversationHistory = []
+        self.history: ConversationHistory = []
 
     @staticmethod
     def from_json(json_obj: dict):
+        narratives = [] if 'story' not in json_obj else json_obj['story']
         choices = [] if 'choices' not in json_obj else json_obj['choices']
         return StoryChunk(json_obj['id'], json_obj['chapter'], json_obj['story_so_far'],
-                          [StoryNarrative.from_json(narrative) for narrative in json_obj['narratives']],
+                          [StoryNarrative.from_json(narrative) for narrative in narratives],
                           [StoryChoice.from_json(choice) for choice in choices])
 
     def to_json(self) -> dict:
@@ -29,23 +30,23 @@ class StoryChunk:
             'id': self.id,
             'chapter': self.chapter,
             'story_so_far': self.story_so_far,
-            'narratives': [narrative.to_json() for narrative in self.narratives],
+            'story': [narrative.to_json() for narrative in self.story],
             'choices': [choice.to_json() for choice in self.choices],
-            'chapter': self.chapter
+            'history': self.history
         }
 
     def __str__(self):
-        return f'StoryChunk(id={self.id}, chapter={self.chapter}, story_so_far={self.story_so_far}, narratives={[str(n) for n in self.narratives]}, choices={[str(c) for c in self.choices]})'
+        return f'StoryChunk(id={self.id}, chapter={self.chapter}, story_so_far={self.story_so_far}, story={[str(n) for n in self.story]}, choices={[str(c) for c in self.choices]})'
 
     def save_to_db(self, session: Session):
-        if len(self.current_history) == 0:
+        if len(self.history) == 0:
             raise ValueError('current_history is None')
 
         session.run(
             '''CREATE (storyChunk:StoryChunk {id: $id, chapter: $chapter, story_so_far: $story_so_far, 
-            narratives: $narratives, current_history: $current_history})''',
-            id=self.id, chapter=self.chapter, story_so_far=self.story_so_far, narratives=json.dumps([n.to_json() for n in self.narratives]), 
-            current_history=json.dumps(self.current_history)
+            story: $story, history: $history})''',
+            id=self.id, chapter=self.chapter, story_so_far=self.story_so_far, story=json.dumps([n.to_json() for n in self.story]), 
+            history=json.dumps(self.history)
         )
 
     def branched_timeline_to_db(self, session: Session, story_chunk: 'StoryChunk', choice: StoryChoice = None):

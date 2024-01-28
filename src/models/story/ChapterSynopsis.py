@@ -4,7 +4,7 @@ from src.db.DBModel import DBModel
 
 
 class ChapterSynopsis(DBModel):
-    def __init__(self, chapter, synopsis):
+    def __init__(self, chapter: int, synopsis: str):
         self.chapter = chapter
         self.synopsis = synopsis
 
