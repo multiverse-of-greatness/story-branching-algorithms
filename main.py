@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from typing_extensions import Annotated
 
-from src.chatgpt import chatgpt
+from src.chatgpt import ChatGPT
 from src.db.Neo4JConnector import Neo4JConnector
 from src.models.GenerationConfig import GenerationConfig
 from src.models.StoryChunk import StoryChunk
@@ -86,6 +86,7 @@ def main(
     )
 
     neo4j_connector = Neo4JConnector()
+    chatgpt = ChatGPT()
 
     logger.info(f"Generation config: {config}")
 
@@ -103,14 +104,12 @@ def main(
     with open(output_path / "histories.json", "w") as file:
         file.write(json.dumps({"histories": [history]}, indent=2))
 
-    story_data_raw, story_data_obj = chatgpt(history)
+    story_data_raw, story_data_obj = chatgpt.chat_completions(history)
     story_data_obj["id"] = story_id
     story_data = StoryData.from_json(story_data_obj)
     neo4j_connector.write(story_data)
 
-    initial_history = format_openai_message(
-        story_data_raw, role="assistant", history=history
-    )
+    initial_history = format_openai_message(story_data_raw, role="assistant", history=history)
     logger.debug("End story plot generation")
 
     with open(output_path / "plot.json", "w") as file:
@@ -118,97 +117,68 @@ def main(
             json.dumps({"raw": story_data_raw, "parsed": story_data_obj}, indent=2)
         )
 
-    queue: list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice]]] = [
-        (1, 0, None, None)
+    frontiers: list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice]]] = [
+        (1, 0, None, None, BranchingType.BRANCHING)  # Start from chapter 1
     ]
-    cnt = 0  # TODO: remove
+    cnt = 0
     state = None
-    while queue:
+    while frontiers:
         cnt += 1
-        chapter, used_choice_opportunity, parent_chunk, choice = queue.pop(0)
+        chapter, used_choice_opportunity, parent_chunk, choice, state = frontiers.pop(0)
 
         num_choices = random.randint(config.min_num_choices, config.max_num_choices)
         history = initial_history if not parent_chunk else parent_chunk.history
 
-        if not choice:
-            if used_choice_opportunity == 0:  # First chunk of the chapter
-                prompt = get_story_until_choices_opportunity_prompt(
-                    config, story_data, num_choices, used_choice_opportunity, chapter
-                )
-                state = BranchingType.BRANCHING
-            elif used_choice_opportunity == config.max_num_choices_opportunity:
-                if chapter == config.num_chapters:  # End of game
-                    prompt = story_until_game_end_prompt(
-                        config, story_data, parent_chunk
-                    )
-                    state = BranchingType.GAME_END
-                else:  # End of chapter
-                    prompt = story_until_chapter_end_prompt(
-                        config, story_data, parent_chunk
-                    )
-                    state = BranchingType.CHAPTER_END
-        else:  # Branch to a choice
-            prompt = story_based_on_selected_choice_prompt(
-                config,
-                story_data,
-                choice,
-                num_choices,
-                used_choice_opportunity,
-                chapter,
-            )
-            state = BranchingType.BRANCHING
+        if state is BranchingType.BRANCHING:
+            if not choice:  # Start of chapter
+                prompt = get_story_until_choices_opportunity_prompt(config, story_data, num_choices, used_choice_opportunity, chapter)
+            else:  # In the middle of chapter
+                prompt = story_based_on_selected_choice_prompt(config, story_data, choice, num_choices, used_choice_opportunity, chapter)
+        elif state is BranchingType.CHAPTER_END:
+            prompt = story_until_chapter_end_prompt(config, story_data, parent_chunk)
+        elif state is BranchingType.GAME_END:
+            prompt = story_until_game_end_prompt(config, story_data, parent_chunk)
 
-        logger.debug(
-            f"Current chapter: {chapter}, num_opp: {used_choice_opportunity}, state: {state}, choice: {choice}"
-        )
+        logger.debug(f"Current chapter: {chapter}, num_opp: {used_choice_opportunity}, state: {state}, choice: {choice}")
 
         history = format_openai_message(prompt, history=history)
-        story_chunk_raw, story_chunk_obj = chatgpt(history)
-        story_chunk_obj["id"] = str(uuid.uuid1())
-        story_chunk_obj["chapter"] = chapter
-        story_chunk = StoryChunk.from_json(story_chunk_obj)
-        story_chunk.history = format_openai_message(
-            story_chunk_raw, role="assistant", history=history
-        )
 
-        if len(story_chunk.story) == 0:
-            logger.warning(f"Story chunk {story_chunk.id} has no story")
+        prompt_success = False
+        while not prompt_success:
+            try:
+                story_chunk_raw, story_chunk_obj = chatgpt.chat_completions(history)
+                story_chunk_obj["id"] = str(uuid.uuid1())
+                story_chunk_obj["chapter"] = chapter
+                current_chunk = StoryChunk.from_json(story_chunk_obj)
+                prompt_success = True
+            except Exception as e:
+                logger.warning(f"Exception occurred while chat completion: {e}")
+        current_chunk.history = format_openai_message(story_chunk_raw, role="assistant", history=history)
 
-        neo4j_connector.write(story_chunk)
+        if len(current_chunk.story) == 0:
+            logger.warning(f"Story chunk {current_chunk.id} has no story narratives.")
+
+        neo4j_connector.write(current_chunk)
         if not parent_chunk:
-            neo4j_connector.with_session(story_data.add_story_chunk_to_db, story_chunk)
+            neo4j_connector.with_session(story_data.add_story_chunk_to_db, current_chunk)
         else:
-            neo4j_connector.with_session(
-                parent_chunk.branched_timeline_to_db, story_chunk, choice
-            )
+            neo4j_connector.with_session(parent_chunk.branched_timeline_to_db, current_chunk, choice)
 
-        current_chunk_data = None
+        child_chunks = []
         if state is BranchingType.BRANCHING:
-            if (
-                used_choice_opportunity < config.max_num_choices_opportunity
-            ):  # Branch to multiple choices
-                for choice in story_chunk.choices:
-                    current_chunk_data = (
-                        chapter,
-                        used_choice_opportunity + 1,
-                        story_chunk,
-                        choice,
-                    )
-            elif (
-                used_choice_opportunity == config.max_num_choices_opportunity
-            ):  # Branch to the end of chapter
-                current_chunk_data = (
-                    chapter,
-                    used_choice_opportunity,
-                    story_chunk,
-                    None,
-                )
-        elif state is BranchingType.CHAPTER_END:  # Branch to the next chapter
-            current_chunk_data = (chapter + 1, 0, story_chunk, None)
-        elif state is BranchingType.GAME_END:  # Branch to the end of game
-            current_chunk_data = (chapter, used_choice_opportunity, story_chunk, None)
+            if used_choice_opportunity < config.max_num_choices_opportunity:  # Branch to multiple choices
+                for choice in current_chunk.choices:
+                    child_chunks.append((chapter, used_choice_opportunity + 1, current_chunk, choice, BranchingType.BRANCHING))
+            elif used_choice_opportunity == config.max_num_choices_opportunity:
+                if chapter < config.num_chapters:  # Branch to the end of chapter
+                    child_chunks.append((chapter, used_choice_opportunity, current_chunk, None, BranchingType.CHAPTER_END))
+                elif chapter == config.num_chapters:  # Branch to the end of game
+                    child_chunks.append((chapter, used_choice_opportunity, current_chunk, None, BranchingType.GAME_END))
+        elif state is BranchingType.CHAPTER_END:
+            if chapter < config.num_chapters:  # Branch to the next chapter
+                child_chunks.append((chapter + 1, 0, current_chunk, None, BranchingType.BRANCHING))
 
-        queue.append(current_chunk_data)
+        frontiers.extend(child_chunks)
 
     logger.debug(f"Total number of chunks: {cnt}")
 
