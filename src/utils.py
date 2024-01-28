@@ -22,6 +22,9 @@ def format_openai_message(message: str,
 
 
 def parse_json_string(json_string: str) -> dict:
+    if json_string.startswith("{") and json_string.endswith("}"):
+        return json.loads(json_string)
+    
     pattern = r'.*```(json)?\n((.|\n)*?)\n```.*'
     match = re.search(pattern, json_string)
 
