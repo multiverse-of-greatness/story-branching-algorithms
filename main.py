@@ -1,6 +1,6 @@
+import copy
 import json
 import random
-import copy
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -20,7 +20,6 @@ from src.prompts import get_plot_prompt, get_story_until_choices_opportunity_pro
     story_based_on_selected_choice_prompt, story_until_chapter_end_prompt, story_until_game_end_prompt
 from src.utils import format_openai_message
 
-
 # TODO: Automatically rolling window story so far in case the token limit exceed (do it in chatgpt -> use tiktoken)
 
 # TODO: Put back the parameters
@@ -36,7 +35,6 @@ from src.utils import format_openai_message
             Optional[int], typer.Option(help="Minimum number of choice opportunities per chapter")] = 3,
         max_num_choices_opportunity: Annotated[
             Optional[int], typer.Option(help="Maximum number of choice opportunities per chapter")] = 5"""
-
 
 BRANCHING = 0
 CHAPTER_END = 1
@@ -97,31 +95,32 @@ def main(
 
     queue: list[tuple[int, int, StoryChunk, StoryChoice]] = []
     queue.append((1, 0, None, None))
-    cnt = 0       # TODO: remove
+    cnt = 0  # TODO: remove
     while queue:
         cnt += 1  # TODO: remove
         chapter, num_opp, parent_chunk, choice = queue.pop(0)
 
+        num_choices = random.randint(config.min_num_choices, config.max_num_choices)
         if not choice:
-            if num_opp == 0:                                         # First chunk of the chapter
-                num_choices = random.randint(config.min_num_choices, config.max_num_choices)
+            if num_opp == 0:  # First chunk of the chapter
                 prompt = get_story_until_choices_opportunity_prompt(config, story_data, num_choices, num_opp, chapter)
-                history = format_openai_message(prompt, history=initial_history if not parent_chunk else parent_chunk.current_history)
+                history = format_openai_message(prompt,
+                                                history=initial_history if not parent_chunk else parent_chunk.current_history)
                 state = BRANCHING
             elif num_opp == config.max_num_choices_opportunity:
-                if chapter == config.num_chapters:                   # End of game
+                if chapter == config.num_chapters:  # End of game
                     prompt = story_until_game_end_prompt(config, story_data, parent_chunk)
                     history = format_openai_message(prompt, history=parent_chunk.current_history)
                     state = GAME_END
-                else:                                                # End of chapter
+                else:  # End of chapter
                     prompt = story_until_chapter_end_prompt(config, story_data, parent_chunk)
                     history = format_openai_message(prompt, history=parent_chunk.current_history)
                     state = CHAPTER_END
-        else:   # Branch to a choice
-            prompt = story_based_on_selected_choice_prompt(config, choice)
+        else:  # Branch to a choice
+            prompt = story_based_on_selected_choice_prompt(config, story_data, choice, num_choices, num_opp, chapter)
             history = format_openai_message(prompt, history=parent_chunk.current_history)
             state = BRANCHING
-        
+
         logger.debug(f"Current chapter: {chapter}, num_opp: {num_opp}, state: {state}, choice: {choice}")
 
         story_chunk_raw, story_chunk_obj = chatgpt(history)
@@ -130,24 +129,24 @@ def main(
         story_chunk = StoryChunk.from_json(story_chunk_obj)
         history = format_openai_message(story_chunk_raw, role="assistant", history=history)
         story_chunk.current_history = copy.deepcopy(history)
-        
+
         neo4j_connector.write(story_chunk)
         if not parent_chunk:
             neo4j_connector.with_session(story_data.add_story_chunk_to_db, story_chunk)
         else:
             neo4j_connector.with_session(parent_chunk.branched_timeline_to_db, story_chunk, choice)
 
-        if state is BRANCHING and num_opp < config.max_num_choices_opportunity:        # Branch to multiple choices
+        if state is BRANCHING and num_opp < config.max_num_choices_opportunity:  # Branch to multiple choices
             for choice in story_chunk.choices:
                 queue.append((chapter, num_opp + 1, story_chunk, choice))
-        elif state is BRANCHING and num_opp == config.max_num_choices_opportunity:     # Branch to the end of chapter
+        elif state is BRANCHING and num_opp == config.max_num_choices_opportunity:  # Branch to the end of chapter
             queue.append((chapter, num_opp, story_chunk, None))
-        elif state is CHAPTER_END and chapter < config.num_chapters:                   # Branch to the next chapter
+        elif state is CHAPTER_END and chapter < config.num_chapters:  # Branch to the next chapter
             queue.append((chapter + 1, 0, story_chunk, None))
-        elif state is CHAPTER_END and chapter == config.num_chapters:                  # Branch to the end of game
+        elif state is CHAPTER_END and chapter == config.num_chapters:  # Branch to the end of game
             queue.append((chapter, num_opp, story_chunk, None))
 
-    logger.debug(f"Total number of chunks: {cnt}")   # TODO: remove
+    logger.debug(f"Total number of chunks: {cnt}")  # TODO: remove
 
 
 if __name__ == '__main__':
@@ -155,16 +154,3 @@ if __name__ == '__main__':
     Path("logs").mkdir(exist_ok=True)
     logger.add("logs/{time}.log")
     typer.run(main)
-
-# BFS? frontiers = [CHOICE_1, CHOICE_2, CHOICE_3], visited_in_last_opp = []
-# 1. [/] Generate StoryData
-# => FOR CHAPTER OF CHAPTERS
-# ==> FOR CHOICE_OP OF CHOICE_OPS
-#        *** Do in queue & loop the rest
-#        2. [/] IF QUEUE IS EMPTY Use StoryData to generate StoryChunk (1) w/ 3 Choices
-#        3. Add each choice along with current chunk to queue
-#        3.5. IF it is the last loop, add it to visited_in_last_opp
-#     4. Do the rest in queue
-#    5. Do it one more to connect all branches to the next chapter (loop in visited) (prompt for end chapter if not the last chapter, prompt for end story if the last chapter)
-
-# TODO: Make sure to use and continue history of each chunk

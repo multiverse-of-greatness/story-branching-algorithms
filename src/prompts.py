@@ -8,9 +8,6 @@ from .models.story.StoryChoice import StoryChoice
 JSON_MAGIC_PHRASE = "Return output in JSON format and only the JSON in the Markdown code block. JSON."
 
 
-# TODO: Add info to tell ChatGPT about current choice opportunity number and max number of choice opportunity
-# TODO: Add info about chapter in each prompt
-
 def get_plot_prompt(config: GenerationConfig) -> str:
     if config.themes is None or len(config.themes) == 0:
         config.themes = ["sci-fi", "fantasy", "middle-age", "utopia", "mythical creatures", "world scale"]
@@ -49,7 +46,7 @@ def get_story_until_choices_opportunity_prompt(config: GenerationConfig, story_d
     return f"""Generate possible narratives and dialogues for a {config.game_genre} game, culminating in {num_choices} choices that the player can make to influence the course of the story. {JSON_MAGIC_PHRASE}
 
 # Current chapter
-{chapter}
+{chapter} of {config.num_chapters} chapters
 
 # Current chapter synopsis
 {story_data.chapter_synopses[chapter - 1].synopsis}
@@ -66,8 +63,9 @@ Currently used: {used_opportunity} out of {config.max_num_choices_opportunity} f
 }}"""
 
 
-def story_based_on_selected_choice_prompt(config: GenerationConfig, selected_choice: StoryChoice) -> str:
-    return f"""Generate possible narratives and dialogues for a {config.game_genre} game, based on the selected choice. {JSON_MAGIC_PHRASE}
+def story_based_on_selected_choice_prompt(config: GenerationConfig, story_data: StoryData, selected_choice: StoryChoice,
+                                          num_choices: int, used_opportunity: int, chapter: int) -> str:
+    return f"""Generate possible narratives and dialogues for a {config.game_genre} game, based on the selected choice with {num_choices} possible choices. {JSON_MAGIC_PHRASE}
 
 # Output format
 {{
@@ -76,6 +74,15 @@ def story_based_on_selected_choice_prompt(config: GenerationConfig, selected_cho
 "narratives": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}
+
+# Current chapter
+{chapter} of {config.num_chapters} chapters
+
+# Current chapter synopsis
+{story_data.chapter_synopses[chapter - 1].synopsis}
+
+# Choice opportunities
+Currently used: {used_opportunity} out of {config.max_num_choices_opportunity} for this chapter
 
 # The selected choice
 {selected_choice}"""
