@@ -2,13 +2,13 @@ import json
 
 from neo4j import Session
 
-from src.chatgpt import ConversationHistory
+from src.types import ConversationHistory
 from .story.StoryChoice import StoryChoice
 from .story.StoryNarrative import StoryNarrative
 
 
 class StoryChunk:
-    def __init__(self, id: str, chapter: int, story_so_far: str, narratives: list[StoryNarrative], 
+    def __init__(self, id: str, chapter: int, story_so_far: str, narratives: list[StoryNarrative],
                  choices: list[StoryChoice]):
         self.id = id
         self.chapter = chapter
@@ -27,7 +27,6 @@ class StoryChunk:
     def to_json(self) -> dict:
         return {
             'id': self.id,
-            'chapter': self.chapter,
             'story_so_far': self.story_so_far,
             'narratives': [narrative.to_json() for narrative in self.narratives],
             'choices': [choice.to_json() for choice in self.choices],
@@ -44,7 +43,8 @@ class StoryChunk:
         session.run(
             '''CREATE (storyChunk:StoryChunk {id: $id, chapter: $chapter, story_so_far: $story_so_far, 
             narratives: $narratives, current_history: $current_history})''',
-            id=self.id, chapter=self.chapter, story_so_far=self.story_so_far, narratives=json.dumps([n.to_json() for n in self.narratives]), 
+            id=self.id, chapter=self.chapter, story_so_far=self.story_so_far,
+            narratives=json.dumps([n.to_json() for n in self.narratives]),
             current_history=json.dumps(self.current_history)
         )
 

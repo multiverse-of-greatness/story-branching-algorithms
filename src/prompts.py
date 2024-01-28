@@ -121,3 +121,10 @@ def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData,
 
 # The selected ending
 {story_data.endings[selected_ending_idx]}"""
+
+
+def fix_invalid_json_prompt(old_response: str) -> str:
+    return f"""The following content is not valid JSON. Please fix it and paste it below. {JSON_MAGIC_PHRASE}
+    
+# Invalid JSON
+{old_response}"""

@@ -3,3 +3,4 @@ python-dotenv~=1.0.0
 openai~=1.10.0
 loguru~=0.7.2
 neo4j~=5.16.0
+tiktoken~=0.5.2

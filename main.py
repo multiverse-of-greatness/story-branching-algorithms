@@ -18,9 +18,8 @@ from src.models.StoryData import StoryData
 from src.models.story.StoryChoice import StoryChoice
 from src.prompts import get_plot_prompt, get_story_until_choices_opportunity_prompt, \
     story_based_on_selected_choice_prompt, story_until_chapter_end_prompt, story_until_game_end_prompt
+from src.types import BranchingType
 from src.utils import format_openai_message
-
-# TODO: Automatically rolling window story so far in case the token limit exceed (do it in chatgpt -> use tiktoken)
 
 # TODO: Put back the parameters
 """game_genre: Annotated[Optional[str], typer.Option(help="Game genre")] = 'visual novel',
@@ -35,10 +34,6 @@ from src.utils import format_openai_message
             Optional[int], typer.Option(help="Minimum number of choice opportunities per chapter")] = 3,
         max_num_choices_opportunity: Annotated[
             Optional[int], typer.Option(help="Maximum number of choice opportunities per chapter")] = 5"""
-
-BRANCHING = 0
-CHAPTER_END = 1
-GAME_END = 2
 
 
 def main(
@@ -63,7 +58,7 @@ def main(
     logger.info(f"Generation config: {config}")
 
     # story_id = str(uuid.uuid1()) # TODO: uncomment
-    story_id = "d8cd3f12-bcdd-11ee-bef0-9a01b5b45ca4"  # TODO: delete
+    story_id = "d8cd3f12-bcdd-11ee-bef0-9a01b5b45ca1"  # TODO: delete
 
     logger.info(f"Story ID: {story_id}")
 
@@ -93,9 +88,9 @@ def main(
             "parsed": story_data_obj
         }, indent=2))
 
-    queue: list[tuple[int, int, StoryChunk, StoryChoice]] = []
-    queue.append((1, 0, None, None))
+    queue: list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice]]] = [(1, 0, None, None)]
     cnt = 0  # TODO: remove
+    state = None
     while queue:
         cnt += 1  # TODO: remove
         chapter, num_opp, parent_chunk, choice = queue.pop(0)
@@ -106,20 +101,20 @@ def main(
                 prompt = get_story_until_choices_opportunity_prompt(config, story_data, num_choices, num_opp, chapter)
                 history = format_openai_message(prompt,
                                                 history=initial_history if not parent_chunk else parent_chunk.current_history)
-                state = BRANCHING
+                state = BranchingType.BRANCHING
             elif num_opp == config.max_num_choices_opportunity:
                 if chapter == config.num_chapters:  # End of game
                     prompt = story_until_game_end_prompt(config, story_data, parent_chunk)
                     history = format_openai_message(prompt, history=parent_chunk.current_history)
-                    state = GAME_END
+                    state = BranchingType.GAME_END
                 else:  # End of chapter
                     prompt = story_until_chapter_end_prompt(config, story_data, parent_chunk)
                     history = format_openai_message(prompt, history=parent_chunk.current_history)
-                    state = CHAPTER_END
+                    state = BranchingType.CHAPTER_END
         else:  # Branch to a choice
             prompt = story_based_on_selected_choice_prompt(config, story_data, choice, num_choices, num_opp, chapter)
             history = format_openai_message(prompt, history=parent_chunk.current_history)
-            state = BRANCHING
+            state = BranchingType.BRANCHING
 
         logger.debug(f"Current chapter: {chapter}, num_opp: {num_opp}, state: {state}, choice: {choice}")
 
@@ -136,14 +131,14 @@ def main(
         else:
             neo4j_connector.with_session(parent_chunk.branched_timeline_to_db, story_chunk, choice)
 
-        if state is BRANCHING and num_opp < config.max_num_choices_opportunity:  # Branch to multiple choices
+        if state is BranchingType.BRANCHING and num_opp < config.max_num_choices_opportunity:  # Branch to multiple choices
             for choice in story_chunk.choices:
                 queue.append((chapter, num_opp + 1, story_chunk, choice))
-        elif state is BRANCHING and num_opp == config.max_num_choices_opportunity:  # Branch to the end of chapter
+        elif state is BranchingType.BRANCHING and num_opp == config.max_num_choices_opportunity:  # Branch to the end of chapter
             queue.append((chapter, num_opp, story_chunk, None))
-        elif state is CHAPTER_END and chapter < config.num_chapters:  # Branch to the next chapter
+        elif state is BranchingType.CHAPTER_END and chapter < config.num_chapters:  # Branch to the next chapter
             queue.append((chapter + 1, 0, story_chunk, None))
-        elif state is CHAPTER_END and chapter == config.num_chapters:  # Branch to the end of game
+        elif state is BranchingType.GAME_END and chapter == config.num_chapters:  # Branch to the end of game
             queue.append((chapter, num_opp, story_chunk, None))
 
     logger.debug(f"Total number of chunks: {cnt}")  # TODO: remove
