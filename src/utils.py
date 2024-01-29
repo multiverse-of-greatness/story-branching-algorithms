@@ -26,7 +26,7 @@ def parse_json_string(json_string: str) -> dict:
         return json.loads(json_string)
     
     pattern = r'.*```(json)?\n((.|\n)*?)\n```.*'
-    match = re.search(pattern, json_string)
+    match = re.search(pattern, json_string, re.DOTALL)
 
     if match is None:
         raise ValueError("Invalid JSON string")
