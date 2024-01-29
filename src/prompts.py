@@ -8,6 +8,16 @@ from .models.story.StoryChoice import StoryChoice
 JSON_MAGIC_PHRASE = "Return output in JSON format and only the JSON in the Markdown code block. JSON."
 
 
+def fix_invalid_json_prompt(old_response: str, error_msg: str) -> str:
+    return f"""The following content is not valid JSON. Please fix it and paste it below. {JSON_MAGIC_PHRASE}
+
+# Error message
+{error_msg}
+
+# Invalid JSON
+{old_response}"""
+
+
 def get_plot_prompt(config: GenerationConfig) -> str:
     if config.themes is None or len(config.themes) == 0:
         config.themes = ["sci-fi", "fantasy", "middle-age", "utopia", "mythical creatures", "world scale"]

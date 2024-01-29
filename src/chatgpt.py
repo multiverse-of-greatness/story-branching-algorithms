@@ -1,14 +1,17 @@
 import json
 import os
+from json.decoder import JSONDecodeError
 from pathlib import Path
 from time import sleep
 
 from loguru import logger
-from openai import OpenAI, APITimeoutError, APIConnectionError, APIError, RateLimitError
+from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
+                    RateLimitError)
 from tiktoken import encoding_for_model
 
+from .prompts import fix_invalid_json_prompt
 from .types import ConversationHistory
-from .utils import parse_json_string
+from .utils import format_openai_message, parse_json_string
 
 
 class ChatGPT:
@@ -67,9 +70,12 @@ class ChatGPT:
                 f.write(json.dumps(responses, indent=2))
 
             return response, parse_json_string(response)
-        except (ValueError, json.decoder.JSONDecodeError) as e:
+        except (ValueError, JSONDecodeError) as e:
             logger.warning(f"OpenAI API response could not be decoded as JSON: {e}")
-            return self.chat_completions(messages)
+            fix_json_prompt = fix_invalid_json_prompt(response, str(e))
+            retry_with = format_openai_message(fix_json_prompt)
+            logger.warning(f"Retrying with: {retry_with}")
+            return self.chat_completions(retry_with)
         except APITimeoutError as e:
             logger.warning(f"OpenAI API request timed out: {e}")
             sleep(3)
