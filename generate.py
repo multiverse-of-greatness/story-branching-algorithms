@@ -1,6 +1,7 @@
 import json
 import random
 import uuid
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -97,6 +98,7 @@ def main(
 
     story_data_raw, story_data_obj = chatgpt.chat_completions(history)
     story_data_obj["id"] = story_id
+    story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
     story_data = StoryData.from_json(story_data_obj)
     neo4j_connector.write(story_data)
 
@@ -134,8 +136,8 @@ def main(
 
         history = format_openai_message(prompt, history=history)
 
-        prompt_success = False
-        while not prompt_success:
+        prompt_success, prompt_attempt = False, 0
+        while not prompt_success and prompt_attempt < 3:
             try:
                 story_chunk_raw, story_chunk_obj = chatgpt.chat_completions(history)
                 story_chunk_obj["id"] = str(uuid.uuid1())
@@ -145,7 +147,15 @@ def main(
                 current_chunk = StoryChunk.from_json(story_chunk_obj)
                 prompt_success = True
             except Exception as e:
+                prompt_attempt += 1
                 logger.warning(f"Exception occurred while chat completion: {e}")
+
+        if not prompt_success:
+            logger.error(f"Failed to generate story chunk.")
+            logger.error(f"Story ID: {story_id}, Chapter: {chapter}, Opportunity: {used_choice_opportunity}, State: {state}, Choice: {choice}")
+            logger.error("Exiting...")
+            exit(1)
+
         current_chunk.history = format_openai_message(story_chunk_raw, role="assistant", history=history)
 
         if len(current_chunk.story) == 0:

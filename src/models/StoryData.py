@@ -12,7 +12,7 @@ from .story.SceneData import SceneData
 class StoryData(DBModel):
     def __init__(self, id: str, title: str, genre: str, themes: list[str], main_scenes: list[SceneData],
                  main_characters: list[CharacterData], synopsis: str, chapter_synopses: list[ChapterSynopsis],
-                 beginning: str, endings: list[EndingData]):
+                 beginning: str, endings: list[EndingData], generated_by: str):
         self.id = id
         self.title = title
         self.genre = genre
@@ -23,6 +23,7 @@ class StoryData(DBModel):
         self.chapter_synopses = chapter_synopses
         self.beginning = beginning
         self.endings = endings
+        self.generated_by = generated_by
 
     @staticmethod
     def from_json(json_obj: dict):
@@ -31,7 +32,7 @@ class StoryData(DBModel):
                          [CharacterData.from_json(character) for character in json_obj['main_characters']],
                          json_obj['synopsis'], [ChapterSynopsis.from_json(chapter_synopsis) for chapter_synopsis in
                                                 json_obj['chapter_synopses']], json_obj['beginning'],
-                         [EndingData.from_json(ending) for ending in json_obj['endings']])
+                         [EndingData.from_json(ending) for ending in json_obj['endings']], json_obj['generated_by'])
 
     def to_json(self) -> dict:
         return {
@@ -44,7 +45,8 @@ class StoryData(DBModel):
             'synopsis': self.synopsis,
             'chapter_synopses': [chapter_synopsis.to_json() for chapter_synopsis in self.chapter_synopses],
             'beginning': self.beginning,
-            'endings': [ending.to_json() for ending in self.endings]
+            'endings': [ending.to_json() for ending in self.endings],
+            'generated_by': self.generated_by
         }
 
     def __str__(self):
@@ -55,11 +57,11 @@ class StoryData(DBModel):
             '''CREATE (storyData:StoryData {id: $id, title: $title, genre: $genre, themes: $themes, 
             main_scenes: $main_scenes, main_characters: $main_characters, 
             synopsis: $synopsis, chapter_synopses: $chapter_synopses, 
-            beginning: $beginning, endings: $endings})''',
+            beginning: $beginning, endings: $endings, generated_by: $generated_by})''',
             id=self.id, title=self.title, genre=self.genre, themes=self.themes, main_scenes=json.dumps([s.to_json() for s in self.main_scenes]),
             main_characters=json.dumps([c.to_json() for c in self.main_characters]), synopsis=self.synopsis, 
             chapter_synopses=json.dumps([c.to_json() for c in self.chapter_synopses]), beginning=self.beginning,
-            endings=json.dumps([e.to_json() for e in self.endings])
+            endings=json.dumps([e.to_json() for e in self.endings]), generated_by=self.generated_by,
         )
 
     def add_story_chunk_to_db(self, session: Session, story_chunk: StoryChunk):

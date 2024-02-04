@@ -7,7 +7,7 @@ from time import sleep
 from loguru import logger
 from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
                     RateLimitError)
-from tiktoken import encoding_for_model
+from tiktoken import get_encoding
 
 from .prompts import fix_invalid_json_prompt
 from .types import ConversationHistory
@@ -17,7 +17,7 @@ from .utils import format_openai_message, parse_json_string
 class ChatGPT:
     def __init__(self):
         self.model = os.getenv("GENERATION_MODEL")
-        self.encoder = encoding_for_model(self.model)
+        self.encoder = get_encoding("cl100k_base")
         self.client = OpenAI(timeout=60)
 
     def rolling_history(self, history: ConversationHistory) -> ConversationHistory:
