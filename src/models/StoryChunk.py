@@ -15,6 +15,8 @@ class StoryChunk:
         story_so_far: str,
         story: list[StoryNarrative],
         choices: list[StoryChoice],
+        story_id: str,
+        num_opportunities: int,
     ):
         self.id = id
         self.chapter = chapter
@@ -22,6 +24,8 @@ class StoryChunk:
         self.story = story
         self.choices = choices
         self.history: ConversationHistory = []
+        self.story_id = story_id
+        self.num_opportunities = num_opportunities
 
     @staticmethod
     def from_json(json_obj: dict):
@@ -33,15 +37,20 @@ class StoryChunk:
             json_obj["story_so_far"],
             [StoryNarrative.from_json(narrative) for narrative in narratives],
             [StoryChoice.from_json(choice) for choice in choices],
+            json_obj["story_id"],
+            json_obj["num_opportunities"],
         )
 
     def to_json(self) -> dict:
         return {
             "id": self.id,
+            "chapter": self.chapter,
             "story_so_far": self.story_so_far,
             "story": [narrative.to_json() for narrative in self.story],
             "choices": [choice.to_json() for choice in self.choices],
             "history": self.history,
+            "story_id": self.story_id,
+            "num_opportunities": self.num_opportunities,
         }
 
     def __str__(self):
@@ -53,12 +62,14 @@ class StoryChunk:
 
         session.run(
             """CREATE (storyChunk:StoryChunk {id: $id, chapter: $chapter, story_so_far: $story_so_far, 
-            story: $story, history: $history})""",
+            story: $story, history: $history, story_id: $story_id, num_opportunities: $num_opportunities})""",
             id=self.id,
             chapter=self.chapter,
             story_so_far=self.story_so_far,
             story=json.dumps([n.to_json() for n in self.story]),
             history=json.dumps(self.history),
+            story_id=self.story_id,
+            num_opportunities=self.num_opportunities,
         )
 
     def branched_timeline_to_db(

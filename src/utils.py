@@ -29,7 +29,7 @@ def parse_json_string(json_string: str) -> dict:
     match = re.search(pattern, json_string, re.DOTALL)
 
     if match is None:
-        raise ValueError("Invalid JSON string")
+        raise ValueError("JSON markdown block not found in the message. Please use the following format:\n```json\n{...}\n```")
 
     json_string = match.group(2)
     return json.loads(json_string)

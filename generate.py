@@ -57,6 +57,9 @@ def main(
         Optional[int],
         typer.Option(help="Maximum number of choice opportunities per chapter"),
     ] = 5,
+    dbname: Annotated[
+        Optional[str], typer.Option(help="Database name"),
+    ] = None,
 ):
     config = GenerationConfig(
         min_num_choices,
@@ -72,6 +75,8 @@ def main(
     )
 
     neo4j_connector = Neo4JConnector()
+    neo4j_connector.set_database(dbname)
+
     chatgpt = ChatGPT()
 
     logger.info(f"Generation config: {config}")
@@ -135,6 +140,8 @@ def main(
                 story_chunk_raw, story_chunk_obj = chatgpt.chat_completions(history)
                 story_chunk_obj["id"] = str(uuid.uuid1())
                 story_chunk_obj["chapter"] = chapter
+                story_chunk_obj["story_id"] = story_id
+                story_chunk_obj["num_opportunities"] = used_choice_opportunity
                 current_chunk = StoryChunk.from_json(story_chunk_obj)
                 prompt_success = True
             except Exception as e:

@@ -73,7 +73,8 @@ class ChatGPT:
         except (ValueError, JSONDecodeError) as e:
             logger.warning(f"OpenAI API response could not be decoded as JSON: {e}")
             fix_json_prompt = fix_invalid_json_prompt(response, str(e))
-            retry_with = format_openai_message(fix_json_prompt)
+            retry_with = format_openai_message("You are a helpful coding AI assistant.", "system")
+            retry_with = format_openai_message(fix_json_prompt, "user", retry_with)
             logger.warning(f"Retrying with: {retry_with}")
             return self.chat_completions(retry_with)
         except APITimeoutError as e:
