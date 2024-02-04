@@ -1,7 +1,7 @@
 import json
 from neo4j import Session
 
-from src.db.DBModel import DBModel
+from src.databases.DBModel import DBModel
 from .StoryChunk import StoryChunk
 from .story.ChapterSynopsis import ChapterSynopsis
 from .story.CharacterData import CharacterData

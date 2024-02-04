@@ -1,6 +1,6 @@
 from neo4j import Session
 
-from src.db.DBModel import DBModel
+from src.databases.DBModel import DBModel
 
 
 class ChapterSynopsis(DBModel):
