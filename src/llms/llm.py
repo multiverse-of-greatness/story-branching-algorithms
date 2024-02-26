@@ -9,12 +9,12 @@ class LLM(ABC):
 
     @property
     @abstractmethod
-    def encoder(self):
+    def max_tokens(self):
         pass
 
-    @property
+    @staticmethod
     @abstractmethod
-    def max_tokens(self):
+    def count_token(message: str) -> int:
         pass
 
     def rolling_history(self, history: ConversationHistory) -> ConversationHistory:
@@ -22,12 +22,12 @@ class LLM(ABC):
         count_tokens = 0
         new_history = []
         for message in history:
-            count_tokens += len(self.encoder.encode(message["content"]))
+            count_tokens += self.count_token(message["content"])
 
         if count_tokens > self.max_tokens * 0.8:  # Total tokens is over 80% of the limit
             count_tokens = 0
             for message in history[-1:3:-1]:
-                count_tokens += len(self.encoder.encode(message["content"]))
+                count_tokens += self.count_token(message["content"])
                 if count_tokens > self.max_tokens * 0.5:  # Rolling history until 50% of the limit
                     break
                 new_history.append(message)

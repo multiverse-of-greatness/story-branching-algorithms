@@ -16,12 +16,16 @@ from ..types.openai import ConversationHistory
 
 
 class ChatGPT(LLM):
-    model_name = os.getenv("GENERATION_MODEL")
     max_tokens = 16385
-    encoder = get_encoding("cl100k_base")
 
     def __init__(self):
+        self.model_name = os.getenv("GENERATION_MODEL")
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60)
+
+    @staticmethod
+    def count_token(message: str) -> int:
+        encoder = get_encoding("cl100k_base")
+        return len(encoder.encode(message))
 
     def generate_content(self, messages: ConversationHistory) -> tuple[str, dict]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
