@@ -19,7 +19,9 @@ class ChatGPT(LLM):
     model_name = os.getenv("GENERATION_MODEL")
     max_tokens = 16385
     encoder = get_encoding("cl100k_base")
-    client = OpenAI(timeout=60)
+
+    def __init__(self):
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60)
 
     def generate_content(self, messages: ConversationHistory) -> tuple[str, dict]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
