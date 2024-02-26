@@ -15,7 +15,7 @@ from src.prompts import (get_story_until_choices_opportunity_prompt,
                          story_until_chapter_end_prompt,
                          story_until_game_end_prompt)
 from src.types import BranchingType, ConversationHistory
-from src.utils import format_openai_message
+from src.utils import append_openai_message
 
 
 def process_generation_queue(config: GenerationConfig, story_id: str, chatgpt: ChatGPT, neo4j_connector: Neo4JConnector, initial_history: ConversationHistory, story_data: StoryData, frontiers: list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice]]]):
@@ -40,7 +40,7 @@ def process_generation_queue(config: GenerationConfig, story_id: str, chatgpt: C
 
         logger.debug(f"Current chapter: {chapter}, num_opp: {used_choice_opportunity}, state: {state}, choice: {choice}")
 
-        history = format_openai_message(prompt, history=history)
+        history = append_openai_message(prompt, history=history)
 
         prompt_success, prompt_attempt = False, 0
         while not prompt_success and prompt_attempt < 3:
@@ -62,7 +62,7 @@ def process_generation_queue(config: GenerationConfig, story_id: str, chatgpt: C
             logger.error("Exiting...")
             exit(1)
 
-        current_chunk.history = format_openai_message(story_chunk_raw, role="assistant", history=history)
+        current_chunk.history = append_openai_message(story_chunk_raw, role="assistant", history=history)
 
         if len(current_chunk.story) == 0:
             logger.warning(f"Story chunk {current_chunk.id} has no story narratives.")

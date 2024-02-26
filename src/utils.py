@@ -5,7 +5,7 @@ import re
 from .types import OpenAIRole, ConversationHistory
 
 
-def format_openai_message(message: str,
+def append_openai_message(message: str,
                           role: OpenAIRole = "user",
                           history: ConversationHistory = None) -> ConversationHistory:
     if history is None:
