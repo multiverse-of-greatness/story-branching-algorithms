@@ -18,7 +18,7 @@ class Neo4JConnector:
     @property
     def uri(self):
         return "bolt://{}:{}".format(self.host, self.port)
-    
+
     def set_database(self, dbname: str):
         if dbname is not None:
             self.dbname = dbname
@@ -29,3 +29,6 @@ class Neo4JConnector:
     def with_session(self, func: Callable, *args, **kwargs):
         with self.driver.session(database=self.dbname) as session:
             func(session, *args, **kwargs)
+
+    def __str__(self):
+        return f"Neo4JConnector(uri={self.uri}, dbname={self.dbname})"

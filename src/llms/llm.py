@@ -48,3 +48,7 @@ class LLM(ABC):
     @abstractmethod
     def generate_content(self, messages: ConversationHistory) -> tuple[str, dict]:
         pass
+
+    @abstractmethod
+    def __str__(self):
+        pass

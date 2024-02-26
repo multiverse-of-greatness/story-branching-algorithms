@@ -1,64 +1,97 @@
+import json
+import os
 import random
 import uuid
-from typing import Optional
 
 from loguru import logger
 
-from src.llms.chatgpt import ChatGPT
-from src.databases.Neo4JConnector import Neo4JConnector
-from src.models.GenerationConfig import GenerationConfig
-from src.models.story.StoryChoice import StoryChoice
+from src.models.GenerationContext import GenerationContext
 from src.models.StoryChunk import StoryChunk
 from src.models.StoryData import StoryData
 from src.prompts import (get_story_until_choices_opportunity_prompt,
                          story_based_on_selected_choice_prompt,
                          story_until_chapter_end_prompt,
-                         story_until_game_end_prompt)
-from src.types import BranchingType, ConversationHistory
+                         story_until_game_end_prompt, get_plot_prompt)
+from src.types import BranchingType
 from src.utils import append_openai_message
 
 
-def process_generation_queue(config: GenerationConfig, story_id: str, chatgpt: ChatGPT, neo4j_connector: Neo4JConnector, initial_history: ConversationHistory, story_data: StoryData, frontiers: list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice]]]):
-    cnt = 0
-    state = None
-    while frontiers:
-        cnt += 1
-        chapter, used_choice_opportunity, parent_chunk, choice, state = frontiers.pop(0)
+def initialize_generation(ctx: GenerationContext):
+    logger.debug("Start story plot generation")
+    game_story_prompt = get_plot_prompt(ctx.config)
+    history = append_openai_message(game_story_prompt)
 
-        num_choices = random.randint(config.min_num_choices, config.max_num_choices)
-        history = initial_history if not parent_chunk else parent_chunk.history
+    with open(ctx.output_path / "histories.json", "w") as file:
+        file.write(json.dumps({"histories": [history]}, indent=2))
+
+    story_data_raw, story_data_obj = ctx.generation_model.generate_content(history)
+    story_data_obj["id"] = ctx.story_id
+    story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
+    story_data = StoryData.from_json(story_data_obj)
+    ctx.db_connector.write(story_data)
+
+    initial_history = append_openai_message(story_data_raw, role="assistant", history=history)
+    logger.debug("End story plot generation")
+
+    with open(ctx.output_path / "plot.json", "w") as file:
+        file.write(
+            json.dumps({"raw": story_data_raw, "parsed": story_data_obj}, indent=2)
+        )
+
+    return initial_history, story_data
+
+
+def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
+    cnt = 0
+    frontiers = ctx.get_frontiers()
+    while ctx.get_frontiers():
+        cnt += 1
+        current_chapter, used_choice_opportunity, parent_chunk, choice, state = frontiers.pop(0)
+
+        current_num_choices = random.randint(ctx.config.min_num_choices, ctx.config.max_num_choices)
+        history = ctx.get_initial_history() if not parent_chunk else parent_chunk.history
 
         if state is BranchingType.BRANCHING:
             if not choice:  # Start of chapter
-                prompt = get_story_until_choices_opportunity_prompt(config, story_data, num_choices, used_choice_opportunity, chapter)
+                prompt = get_story_until_choices_opportunity_prompt(ctx.config, story_data, current_num_choices,
+                                                                    used_choice_opportunity, current_chapter)
             else:  # In the middle of chapter
-                prompt = story_based_on_selected_choice_prompt(config, story_data, choice, num_choices, used_choice_opportunity, chapter)
+                prompt = story_based_on_selected_choice_prompt(ctx.config, story_data, choice, current_num_choices,
+                                                               used_choice_opportunity, current_chapter)
         elif state is BranchingType.CHAPTER_END:
-            prompt = story_until_chapter_end_prompt(config, story_data, parent_chunk)
+            prompt = story_until_chapter_end_prompt(ctx.config, story_data, parent_chunk)
         elif state is BranchingType.GAME_END:
-            prompt = story_until_game_end_prompt(config, story_data, parent_chunk)
+            prompt = story_until_game_end_prompt(ctx.config, story_data, parent_chunk)
+        else:
+            logger.error(f"Invalid state: {state}")
+            exit(1)
 
-        logger.debug(f"Current chapter: {chapter}, num_opp: {used_choice_opportunity}, state: {state}, choice: {choice}")
+        logger.debug(
+            f"Current chapter: {current_chapter}, num_opp: {used_choice_opportunity}, state: {state}, choice: {choice}")
 
         history = append_openai_message(prompt, history=history)
 
-        prompt_success, prompt_attempt = False, 0
-        while not prompt_success and prompt_attempt < 3:
+        # Retry chunk generation if failed
+        max_retry_attempts = 3
+        has_chunk_generation_success, current_attempt = False, 0
+        current_chunk, story_chunk_raw = None, None
+        while not has_chunk_generation_success and current_attempt < max_retry_attempts:
             try:
-                story_chunk_raw, story_chunk_obj = chatgpt.generate_content(history)
+                story_chunk_raw, story_chunk_obj = ctx.generation_model.generate_content(history)
                 story_chunk_obj["id"] = str(uuid.uuid1())
-                story_chunk_obj["chapter"] = chapter
-                story_chunk_obj["story_id"] = story_id
+                story_chunk_obj["chapter"] = current_chapter
+                story_chunk_obj["story_id"] = ctx.story_id
                 story_chunk_obj["num_opportunities"] = used_choice_opportunity
                 current_chunk = StoryChunk.from_json(story_chunk_obj)
-                prompt_success = True
+                has_chunk_generation_success = True
             except Exception as e:
-                prompt_attempt += 1
+                current_attempt += 1
                 logger.warning(f"Exception occurred while chat completion: {e}")
 
-        if not prompt_success:
+        if not has_chunk_generation_success or current_chunk is None or story_chunk_raw is None:
             logger.error(f"Failed to generate story chunk.")
-            logger.error(f"Story ID: {story_id}, Chapter: {chapter}, Opportunity: {used_choice_opportunity}, State: {state}, Choice: {choice}")
+            logger.error(
+                f"Story ID: {ctx.story_id}, Chapter: {current_chapter}, Opportunity: {used_choice_opportunity}, State: {state}, Choice: {choice}")
             logger.error("Exiting...")
             exit(1)
 
@@ -67,26 +100,32 @@ def process_generation_queue(config: GenerationConfig, story_id: str, chatgpt: C
         if len(current_chunk.story) == 0:
             logger.warning(f"Story chunk {current_chunk.id} has no story narratives.")
 
-        neo4j_connector.write(current_chunk)
+        # Save to DB
+        ctx.db_connector.write(current_chunk)
         if not parent_chunk:
-            neo4j_connector.with_session(story_data.add_story_chunk_to_db, current_chunk)
+            ctx.db_connector.with_session(story_data.add_story_chunk_to_db, current_chunk)
         else:
-            neo4j_connector.with_session(parent_chunk.branched_timeline_to_db, current_chunk, choice)
+            ctx.db_connector.with_session(parent_chunk.branched_timeline_to_db, current_chunk, choice)
 
         child_chunks = []
         if state is BranchingType.BRANCHING:
-            if used_choice_opportunity < config.max_num_choices_opportunity:  # Branch to multiple choices
+            if used_choice_opportunity < ctx.config.max_num_choices_opportunity:  # Branch to multiple choices
                 for choice in current_chunk.choices:
-                    child_chunks.append((chapter, used_choice_opportunity + 1, current_chunk, choice, BranchingType.BRANCHING))
-            elif used_choice_opportunity == config.max_num_choices_opportunity:
-                if chapter < config.num_chapters:  # Branch to the end of chapter
-                    child_chunks.append((chapter, used_choice_opportunity, current_chunk, None, BranchingType.CHAPTER_END))
-                elif chapter == config.num_chapters:  # Branch to the end of game
-                    child_chunks.append((chapter, used_choice_opportunity, current_chunk, None, BranchingType.GAME_END))
+                    child_chunks.append(
+                        (current_chapter, used_choice_opportunity + 1, current_chunk, choice, BranchingType.BRANCHING))
+            elif used_choice_opportunity == ctx.config.max_num_choices_opportunity:
+                if current_chapter < ctx.config.num_chapters:  # Branch to the end of chapter
+                    child_chunks.append(
+                        (current_chapter, used_choice_opportunity, current_chunk, None, BranchingType.CHAPTER_END))
+                elif current_chapter == ctx.config.num_chapters:  # Branch to the end of game
+                    child_chunks.append(
+                        (current_chapter, used_choice_opportunity, current_chunk, None, BranchingType.GAME_END))
         elif state is BranchingType.CHAPTER_END:
-            if chapter < config.num_chapters:  # Branch to the next chapter
-                child_chunks.append((chapter + 1, 0, current_chunk, None, BranchingType.BRANCHING))
+            if current_chapter < ctx.config.num_chapters:  # Branch to the next chapter
+                child_chunks.append((current_chapter + 1, 0, current_chunk, None, BranchingType.BRANCHING))
 
         frontiers.extend(child_chunks)
+        ctx.set_frontiers(frontiers)
 
     logger.debug(f"Total number of chunks: {cnt}")
+    logger.debug("End of story generation")

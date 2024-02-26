@@ -9,7 +9,7 @@ from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
                     RateLimitError)
 from tiktoken import get_encoding
 
-from src.llms.LLM import LLM
+from src.llms.llm import LLM
 from src.prompts import fix_invalid_json_prompt
 from src.types import ConversationHistory
 from src.utils import append_openai_message, parse_json_string
@@ -68,3 +68,6 @@ class ChatGPT(LLM):
         logger.warning(f"Retrying with: {retry_history}")
 
         return self.generate_content(retry_history)
+
+    def __str__(self):
+        return f"ChatGPT(model_name={self.model_name}, max_tokens={self.max_tokens})"

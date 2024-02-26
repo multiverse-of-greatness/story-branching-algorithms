@@ -1,6 +1,3 @@
-import json
-import os
-import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -9,16 +6,11 @@ from dotenv import load_dotenv
 from loguru import logger
 from typing_extensions import Annotated
 
-from src.core import process_generation_queue
+from src.core import process_generation_queue, initialize_generation
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.llms.chatgpt import ChatGPT
 from src.models.GenerationConfig import GenerationConfig
-from src.models.StoryChunk import StoryChunk
-from src.models.StoryData import StoryData
-from src.models.story.StoryChoice import StoryChoice
-from src.prompts import get_plot_prompt
-from src.types import BranchingType
-from src.utils import append_openai_message
+from src.models.GenerationContext import GenerationContext
 
 
 def main(
@@ -68,47 +60,20 @@ def main(
         num_main_characters,
         num_main_scenes,
     )
+    logger.info(f"Generation config: {config}")
 
     neo4j_connector = Neo4JConnector()
     neo4j_connector.set_database(dbname)
 
     chatgpt = ChatGPT()
 
-    logger.info(f"Generation config: {config}")
+    generation_context = GenerationContext(neo4j_connector, chatgpt, config)
+    logger.info(f"Generation context: {generation_context}")
 
-    story_id = str(uuid.uuid1())
+    initial_history, story_data = initialize_generation(generation_context)
+    generation_context.set_initial_history(initial_history)
 
-    logger.info(f"Story ID: {story_id}")
-
-    output_path = Path("outputs") / story_id
-    output_path.mkdir(exist_ok=True, parents=True)
-
-    logger.debug("Start story plot generation")
-    game_story_prompt = get_plot_prompt(config)
-    history = append_openai_message(game_story_prompt)
-
-    with open(output_path / "histories.json", "w") as file:
-        file.write(json.dumps({"histories": [history]}, indent=2))
-
-    story_data_raw, story_data_obj = chatgpt.generate_content(history)
-    story_data_obj["id"] = story_id
-    story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
-    story_data = StoryData.from_json(story_data_obj)
-    neo4j_connector.write(story_data)
-
-    initial_history = append_openai_message(story_data_raw, role="assistant", history=history)
-    logger.debug("End story plot generation")
-
-    with open(output_path / "plot.json", "w") as file:
-        file.write(
-            json.dumps({"raw": story_data_raw, "parsed": story_data_obj}, indent=2)
-        )
-
-    frontiers: list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice]]] = [
-        (1, 0, None, None, BranchingType.BRANCHING)  # Start from chapter 1
-    ]
-
-    process_generation_queue(config, story_id, chatgpt, neo4j_connector, initial_history, story_data, frontiers)
+    process_generation_queue(generation_context, story_data)
 
 
 if __name__ == "__main__":
