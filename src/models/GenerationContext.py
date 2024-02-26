@@ -35,7 +35,11 @@ class GenerationContext:
 
     @staticmethod
     def from_json(json_obj: dict):
-        return GenerationContext(Neo4JConnector(), LLM(), GenerationConfig.from_json(json_obj['config']))
+        ctx = GenerationContext(Neo4JConnector(), LLM(), GenerationConfig.from_json(json_obj['config']))
+        ctx.set_initial_history(json_obj['initial_history'])
+        ctx.set_frontiers(
+            list(map(lambda x: (x[0], x[1], x[2], x[3], BranchingType.from_string(x[4])), json_obj['frontiers'])))
+        return ctx
 
     def to_json(self) -> dict:
         return {
@@ -45,7 +49,7 @@ class GenerationContext:
             'story_id': self.story_id,
             'output_path': str(self.output_path),
             'initial_history': self._initial_history,
-            'frontiers': self._frontiers
+            'frontiers': list(map(lambda x: (x[0], x[1], x[2], x[3], BranchingType.to_string(x[4])), self._frontiers))
         }
 
     def __str__(self):
