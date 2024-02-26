@@ -4,7 +4,7 @@ from typing import Optional
 
 from loguru import logger
 
-from src.chatgpt import ChatGPT
+from src.llms.chatgpt import ChatGPT
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.models.GenerationConfig import GenerationConfig
 from src.models.story.StoryChoice import StoryChoice
@@ -45,7 +45,7 @@ def process_generation_queue(config: GenerationConfig, story_id: str, chatgpt: C
         prompt_success, prompt_attempt = False, 0
         while not prompt_success and prompt_attempt < 3:
             try:
-                story_chunk_raw, story_chunk_obj = chatgpt.chat_completions(history)
+                story_chunk_raw, story_chunk_obj = chatgpt.generate_content(history)
                 story_chunk_obj["id"] = str(uuid.uuid1())
                 story_chunk_obj["chapter"] = chapter
                 story_chunk_obj["story_id"] = story_id
