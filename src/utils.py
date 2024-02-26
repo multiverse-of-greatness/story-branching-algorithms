@@ -1,7 +1,12 @@
 import copy
 import json
 import re
+from pathlib import Path
 
+import typer
+from loguru import logger
+
+from .models.StoryData import StoryData
 from .types.openai import OpenAIRole, ConversationHistory
 
 
@@ -34,3 +39,20 @@ def parse_json_string(json_string: str) -> dict:
 
     json_string = match[-1][-1].strip()
     return json.loads(json_string)
+
+
+def validate_existing_plot(existing_plot_path: str):
+    if existing_plot_path and not Path(existing_plot_path).exists():
+        logger.error(f"Existing plot file not found: {existing_plot_path}")
+        raise typer.Abort()
+
+    if existing_plot_path:
+        try:
+            with open(existing_plot_path, "r") as file:
+                content = json.load(file)
+                story_data_obj = content["parsed"]
+                StoryData.from_json(story_data_obj)
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error(f"Existing plot file not valid: {existing_plot_path}")
+            logger.error(e)
+            raise typer.Abort()

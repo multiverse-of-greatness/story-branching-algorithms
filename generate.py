@@ -11,6 +11,7 @@ from src.databases.Neo4JConnector import Neo4JConnector
 from src.llms.chatgpt import ChatGPT
 from src.models.GenerationConfig import GenerationConfig
 from src.models.GenerationContext import GenerationContext
+from src.utils import validate_existing_plot
 
 
 def main(
@@ -47,7 +48,12 @@ def main(
         dbname: Annotated[
             Optional[str], typer.Option(help="Database name"),
         ] = None,
+        existing_plot: Annotated[
+            Optional[str], typer.Option(help="Existing plot to be used"),
+        ] = None,
 ):
+    validate_existing_plot(existing_plot)
+
     config = GenerationConfig(
         min_num_choices,
         max_num_choices,
@@ -59,6 +65,7 @@ def main(
         num_endings,
         num_main_characters,
         num_main_scenes,
+        existing_plot,
     )
     logger.info(f"Generation config: {config}")
 

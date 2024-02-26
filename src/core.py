@@ -18,13 +18,21 @@ from .types.algorithm import BranchingType
 
 def initialize_generation(ctx: GenerationContext):
     logger.debug("Start story plot generation")
+
     game_story_prompt = get_plot_prompt(ctx.config)
     history = append_openai_message(game_story_prompt)
 
     with open(ctx.output_path / "histories.json", "w") as file:
         file.write(json.dumps({"histories": [history]}, indent=2))
 
-    story_data_raw, story_data_obj = ctx.generation_model.generate_content(ctx, history)
+    if not ctx.config.existing_plot:
+        story_data_raw, story_data_obj = ctx.generation_model.generate_content(ctx, history)
+    else:
+        with open(ctx.config.existing_plot, "r") as file:
+            content = json.load(file)
+            story_data_obj = content["parsed"]
+            story_data_raw = story_data_obj["raw"]
+
     story_data_obj["id"] = ctx.story_id
     story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
     story_data = StoryData.from_json(story_data_obj)
