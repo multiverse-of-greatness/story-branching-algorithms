@@ -24,7 +24,7 @@ def initialize_generation(ctx: GenerationContext):
     with open(ctx.output_path / "histories.json", "w") as file:
         file.write(json.dumps({"histories": [history]}, indent=2))
 
-    story_data_raw, story_data_obj = ctx.generation_model.generate_content(history)
+    story_data_raw, story_data_obj = ctx.generation_model.generate_content(ctx, history)
     story_data_obj["id"] = ctx.story_id
     story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
     story_data = StoryData.from_json(story_data_obj)
@@ -126,6 +126,11 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
 
         frontiers.extend(child_chunks)
         ctx.set_frontiers(frontiers)
+        with open(ctx.output_path / "context.json", "w") as file:
+            json.dump(ctx.to_json(), file, indent=2)
 
+    ctx.is_generation_completed = True
+    with open(ctx.output_path / "context.json", "w") as file:
+        json.dump(ctx.to_json(), file, indent=2)
     logger.debug(f"Total number of chunks: {cnt}")
     logger.debug("End of story generation")
