@@ -9,13 +9,18 @@ JSON_MAGIC_PHRASE = "Return output in JSON format and only the JSON in the Markd
 
 
 def fix_invalid_json_prompt(old_response: str, error_msg: str) -> str:
-    return f"""The following content is not valid JSON. Please fix it and paste it below. {JSON_MAGIC_PHRASE}
+    return f"""Fix the following incorrect JSON data. Correct the syntax and provide new values if needed. The original message is provided between === and ===. {JSON_MAGIC_PHRASE}
 
 # Error message
 {error_msg}
 
-# Invalid JSON
-{old_response}"""
+# Original (Invalid JSON)
+===
+{old_response}
+===
+
+# Fixed (Corrected JSON)
+"""
 
 
 def get_plot_prompt(config: GenerationConfig) -> str:
