@@ -1,7 +1,6 @@
 import json
 import os
 from json.decoder import JSONDecodeError
-from pathlib import Path
 from time import sleep
 
 from loguru import logger
@@ -12,6 +11,7 @@ from tiktoken import get_encoding
 from src.llms.llm import LLM
 from src.prompts import fix_invalid_json_prompt
 from src.utils import append_openai_message, parse_json_string
+from ..models.GenerationContext import GenerationContext
 from ..types.openai import ConversationHistory
 
 
@@ -27,10 +27,11 @@ class ChatGPT(LLM):
         encoder = get_encoding("cl100k_base")
         return len(encoder.encode(message))
 
-    def generate_content(self, messages: ConversationHistory) -> tuple[str, dict]:
+    def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[str, dict]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
-        response = None
+
         messages = self.rolling_history(messages)
+
         try:
             chat_completion = self.client.chat.completions.create(
                 model=self.model_name,
@@ -41,7 +42,7 @@ class ChatGPT(LLM):
 
             response = chat_completion.choices[0].message.content
 
-            output_path = Path(f"outputs/{self.model_name}.json")
+            output_path = ctx.output_path / f"{self.model_name}.json"
             responses = {"responses": [], "prompt_tokens": 0, "completion_tokens": 0}
 
             if output_path.exists():

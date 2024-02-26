@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from loguru import logger
 
+from ..models.GenerationContext import GenerationContext
 from ..types.openai import ConversationHistory
 
 
@@ -46,7 +47,7 @@ class LLM(ABC):
             return history
 
     @abstractmethod
-    def generate_content(self, messages: ConversationHistory) -> tuple[str, dict]:
+    def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[str, dict]:
         pass
 
     @abstractmethod
