@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  story-branching:
+    image: neo4j:latest
+    container_name: story-branching
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - $HOME/neo4j/data:/data
+      - $HOME/neo4j/logs:/logs
+      - $HOME/neo4j/import:/var/lib/neo4j/import
+      - $HOME/neo4j/plugins:/plugins
+    environment:
+      NEO4J_apoc_export_file_enabled: "true"
+      NEO4J_apoc_import_file_enabled: "true"
+      NEO4J_apoc_import_file_use__neo4j__config: "true"
+      NEO4J_PLUGINS: '["apoc"]'
+
