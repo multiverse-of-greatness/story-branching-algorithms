@@ -48,4 +48,6 @@ class GenerationContext:
         }
 
     def __str__(self):
-        return f"""GenerationContext(db_connector={self.db_connector}, generation_model={self.generation_model}, config={self.config}, story_id={self.story_id}, output_path={self.output_path}, initial_history={self._initial_history}, frontiers={self._frontiers})"""
+        return f"""GenerationContext(db_connector={self.db_connector}, generation_model={self.generation_model}, 
+        config={self.config}, story_id={self.story_id}, output_path={self.output_path}, 
+        initial_history={self._initial_history}, frontiers={self._frontiers})"""

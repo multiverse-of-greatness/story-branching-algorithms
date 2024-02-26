@@ -8,21 +8,6 @@ from .models.story.StoryChoice import StoryChoice
 JSON_MAGIC_PHRASE = "Return output in JSON format and only the JSON in the Markdown code block. JSON."
 
 
-def fix_invalid_json_prompt(old_response: str, error_msg: str) -> str:
-    return f"""Fix the following incorrect JSON data. Correct the syntax and provide new values if needed. The original message is provided between === and ===. {JSON_MAGIC_PHRASE}
-
-# Error message
-{error_msg}
-
-# Original (Invalid JSON)
-===
-{old_response}
-===
-
-# Fixed (Corrected JSON)
-"""
-
-
 def get_plot_prompt(config: GenerationConfig) -> str:
     if config.themes is None or len(config.themes) == 0:
         config.themes = ["sci-fi", "fantasy", "middle-age", "utopia", "mythical creatures", "world scale"]
@@ -46,7 +31,7 @@ def get_plot_prompt(config: GenerationConfig) -> str:
 "main_scenes": [{{"id": id, "title": location name, "location": where is this place, "description": describe location}}].
 "main_characters": [{{"id": id, "first_name": first name, "last_name": last name, "species": species, "age": exact age or description, "role": role of the character, "background": background story, "place_of_birth": location, "physical_appearance": [details]}}]
 "synopsis": synopsis,
-"chapter_synopses": [{{"chapter": chapter_number, "synopsis": synopsis}}]
+"chapter_synopses": [{{"chapter": chapter_number, "synopsis": synopsis, "character_ids": id of featured characters in this chapter, "scene_ids": id of featured scenes in this chapter}}]
 "beginning": beginning of the story,
 "endings": [{{"id": id, "ending": ending}}]
 }}
@@ -136,3 +121,18 @@ def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData,
 
 # The selected ending
 {story_data.endings[selected_ending_idx]}"""
+
+
+def fix_invalid_json_prompt(old_response: str, error_msg: str) -> str:
+    return f"""Fix the following incorrect JSON data. Correct the syntax and provide new values if needed. The original message is provided between === and ===. {JSON_MAGIC_PHRASE}
+
+# Error message
+{error_msg}
+
+# Original (Invalid JSON)
+===
+{old_response}
+===
+
+# Fixed (Corrected JSON)
+"""
