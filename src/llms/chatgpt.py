@@ -56,6 +56,12 @@ class ChatGPT(LLM):
             with open(output_path, "w") as f:
                 f.write(json.dumps(responses, indent=2))
 
+            with open(ctx.output_path / "histories.json", "r+") as file:
+                histories = json.load(file)
+                histories["histories"].append(messages)
+                file.seek(0)
+                file.write(json.dumps(histories, indent=2))
+
             return response, parse_json_string(response)
         except (ValueError, JSONDecodeError) as e:
             logger.warning(f"OpenAI API response could not be decoded as JSON: {str(e)}")
