@@ -11,11 +11,12 @@ from ..types.openai import ConversationHistory
 
 
 class GenerationContext:
-    def __init__(self, db_connector: Neo4JConnector, generation_model: LLM, config: GenerationConfig):
+    def __init__(self, db_connector: Neo4JConnector, generation_model: LLM, config: GenerationConfig,
+                 story_id: str = None):
         self.db_connector = db_connector
         self.generation_model = generation_model
         self.config = config
-        self.story_id = str(uuid.uuid1())
+        self.story_id = story_id if story_id is not None else str(uuid.uuid1())
         self.output_path = Path("outputs") / self.story_id
         self.output_path.mkdir(exist_ok=True, parents=True)
         self._initial_history: Optional[ConversationHistory] = None
@@ -34,8 +35,9 @@ class GenerationContext:
         return self._frontiers
 
     @staticmethod
-    def from_json(json_obj: dict):
-        ctx = GenerationContext(Neo4JConnector(), LLM(), GenerationConfig.from_json(json_obj['config']))
+    def from_json(json_obj: dict, db_connector: Neo4JConnector, generation_model: LLM) -> 'GenerationContext':
+        ctx = GenerationContext(db_connector, generation_model, GenerationConfig.from_json(json_obj['config']),
+                                json_obj['story_id'])
         ctx.set_initial_history(json_obj['initial_history'])
         ctx.set_frontiers(
             list(map(lambda x: (x[0], x[1], x[2], x[3], BranchingType.from_string(x[4])), json_obj['frontiers'])))

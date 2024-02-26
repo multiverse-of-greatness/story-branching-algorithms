@@ -15,5 +15,6 @@ class BranchingType(Enum):
     def to_string(self) -> str:
         return self.name.lower()
 
-    def from_string(self, s: str) -> 'BranchingType':
+    @staticmethod
+    def from_string(s: str) -> 'BranchingType':
         return BranchingType[s.upper()]
