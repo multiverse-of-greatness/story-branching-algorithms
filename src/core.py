@@ -126,11 +126,7 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
 
         frontiers.extend(child_chunks)
         ctx.set_frontiers(frontiers)
-        with open(ctx.output_path / "context.json", "w") as file:
-            json.dump(ctx.to_json(), file, indent=2)
 
-    ctx.is_generation_completed = True
-    with open(ctx.output_path / "context.json", "w") as file:
-        json.dump(ctx.to_json(), file, indent=2)
+    ctx.completed()
     logger.debug(f"Total number of chunks: {cnt}")
     logger.debug("End of story generation")
