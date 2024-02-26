@@ -58,7 +58,7 @@ class ChatGPT(LLM):
             return response, parse_json_string(response)
         except (ValueError, JSONDecodeError) as e:
             logger.warning(f"OpenAI API response could not be decoded as JSON: {str(e)}")
-            return self.fix_invalid_json_generation(response, str(e))
+            raise e
         except (APITimeoutError, APIConnectionError, RateLimitError, APIError) as e:
             logger.warning(f"OpenAI API error: {e}")
             sleep(3)

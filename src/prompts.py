@@ -124,7 +124,7 @@ def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData,
 
 
 def fix_invalid_json_prompt(old_response: str, error_msg: str) -> str:
-    return f"""Fix the following incorrect JSON data. Correct the syntax and provide new values if needed. The original message is provided between === and ===. {JSON_MAGIC_PHRASE}
+    return f"""Fix the following incorrect JSON data. Correct the syntax and provide new values if needed. Continue the generation if you found that the original is incomplete. The original message is provided between === and ===. {JSON_MAGIC_PHRASE}
 
 # Error message
 {error_msg}
