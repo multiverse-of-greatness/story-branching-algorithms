@@ -24,12 +24,13 @@ def format_openai_message(message: str,
 def parse_json_string(json_string: str) -> dict:
     if json_string.startswith("{") and json_string.endswith("}"):
         return json.loads(json_string)
-    
-    pattern = r'.*```(json)?\n((.|\n)*?)\n```.*'
-    match = re.search(pattern, json_string, re.DOTALL)
 
-    if match is None:
-        raise ValueError("JSON markdown block not found in the message. Please use the following format:\n```json\n{...}\n```")
+    pattern = r'```(json)?\n([\s\S]*?)(?<!`)```'
+    match = re.findall(pattern, json_string, re.DOTALL)
 
-    json_string = match.group(2)
+    if match is None or len(match) == 0:
+        raise ValueError(
+            "JSON markdown block not found in the message. Please use the following format:\n```json\n{...}\n```")
+
+    json_string = match[-1][-1].strip()
     return json.loads(json_string)
