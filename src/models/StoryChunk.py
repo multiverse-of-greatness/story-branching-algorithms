@@ -2,7 +2,7 @@ import json
 
 from neo4j import Session
 
-from src.types import ConversationHistory
+from ..types.openai import ConversationHistory
 from .story.StoryChoice import StoryChoice
 from .story.StoryNarrative import StoryNarrative
 

@@ -2,7 +2,7 @@ import copy
 import json
 import re
 
-from .types import OpenAIRole, ConversationHistory
+from .types.openai import OpenAIRole, ConversationHistory
 
 
 def append_openai_message(message: str,

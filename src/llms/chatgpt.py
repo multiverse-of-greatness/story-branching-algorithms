@@ -11,8 +11,8 @@ from tiktoken import get_encoding
 
 from src.llms.llm import LLM
 from src.prompts import fix_invalid_json_prompt
-from src.types import ConversationHistory
 from src.utils import append_openai_message, parse_json_string
+from ..types.openai import ConversationHistory
 
 
 class ChatGPT(LLM):

@@ -12,8 +12,8 @@ from src.prompts import (get_story_until_choices_opportunity_prompt,
                          story_based_on_selected_choice_prompt,
                          story_until_chapter_end_prompt,
                          story_until_game_end_prompt, get_plot_prompt)
-from src.types import BranchingType
 from src.utils import append_openai_message
+from .types.algorithm import BranchingType
 
 
 def initialize_generation(ctx: GenerationContext):

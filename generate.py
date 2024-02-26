@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -72,6 +73,9 @@ def main(
 
     initial_history, story_data = initialize_generation(generation_context)
     generation_context.set_initial_history(initial_history)
+
+    with open(generation_context.output_path / "context.json", "w") as file:
+        json.dump(generation_context.to_json(), file, indent=2)
 
     process_generation_queue(generation_context, story_data)
 

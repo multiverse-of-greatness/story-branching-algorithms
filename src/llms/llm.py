@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from src.types import ConversationHistory
+from ..types.openai import ConversationHistory
 
 
 class LLM(ABC):
