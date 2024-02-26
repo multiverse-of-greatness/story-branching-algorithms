@@ -44,7 +44,7 @@ def initialize_generation(ctx: GenerationContext):
 def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
     cnt = 0
     frontiers = ctx.get_frontiers()
-    while ctx.get_frontiers():
+    while len(ctx.get_frontiers()) > 0:
         cnt += 1
         current_chapter, used_choice_opportunity, parent_chunk, choice, state = frontiers.pop(0)
 
