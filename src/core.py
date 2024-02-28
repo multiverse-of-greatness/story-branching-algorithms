@@ -111,7 +111,7 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
         current_chunk, story_chunk_raw = None, None
         while not has_chunk_generation_success and current_attempt < max_retry_attempts:
             try:
-                story_chunk_raw, story_chunk_obj = ctx.generation_model.generate_content(history)
+                story_chunk_raw, story_chunk_obj = ctx.generation_model.generate_content(ctx, history)
                 story_chunk_obj["id"] = str(uuid.uuid1())
                 story_chunk_obj["chapter"] = current_chapter
                 story_chunk_obj["story_id"] = ctx.story_id
