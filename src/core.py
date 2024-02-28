@@ -8,11 +8,12 @@ from loguru import logger
 from src.models.generation_context import GenerationContext
 from src.models.story_chunk import StoryChunk
 from src.models.story_data import StoryData
-from src.prompts import (get_story_until_choices_opportunity_prompt,
-                         get_story_based_on_selected_choice_prompt,
-                         get_story_until_chapter_end_prompt,
-                         get_story_until_game_end_prompt, get_plot_prompt, get_character_image_prompt)
-from src.utils import append_openai_message, get_image_from_base64, get_base64_from_image
+from src.prompts.image_prompts import get_character_image_prompt, get_scene_image_prompt
+from src.prompts.story_prompts import (get_story_until_choices_opportunity_prompt,
+                                       get_story_based_on_selected_choice_prompt,
+                                       get_story_until_chapter_end_prompt,
+                                       get_story_until_game_end_prompt, get_plot_prompt)
+from src.utils.general import append_openai_message, get_image_from_base64, get_base64_from_image
 from .types.algorithm import BranchingType
 
 
@@ -55,7 +56,7 @@ def initialize_generation(ctx: GenerationContext):
     for scene in story_data.main_scenes:
         logger.debug(f"Generating image for scene: {scene}")
 
-        prompt = get_character_image_prompt(scene)
+        prompt = get_scene_image_prompt(scene)
         image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt, shape="landscape")
 
         scene.image = image_b64

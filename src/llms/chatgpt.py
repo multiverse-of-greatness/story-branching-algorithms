@@ -9,8 +9,8 @@ from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
 from tiktoken import get_encoding
 
 from src.llms.llm import LLM
-from src.prompts import get_fix_invalid_json_prompt
-from src.utils import append_openai_message, parse_json_string
+from src.prompts.utility_prompts import get_fix_invalid_json_prompt
+from src.utils.general import append_openai_message, parse_json_string
 from ..models.generation_context import GenerationContext
 from ..types.openai import ConversationHistory
 
