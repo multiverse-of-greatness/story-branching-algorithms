@@ -9,10 +9,10 @@ from src.models.generation_context import GenerationContext
 from src.models.story_chunk import StoryChunk
 from src.models.story_data import StoryData
 from src.prompts import (get_story_until_choices_opportunity_prompt,
-                         story_based_on_selected_choice_prompt,
-                         story_until_chapter_end_prompt,
-                         story_until_game_end_prompt, get_plot_prompt)
-from src.utils import append_openai_message
+                         get_story_based_on_selected_choice_prompt,
+                         get_story_until_chapter_end_prompt,
+                         get_story_until_game_end_prompt, get_plot_prompt, get_character_image_prompt)
+from src.utils import append_openai_message, get_image_from_base64, get_base64_from_image
 from .types.algorithm import BranchingType
 
 
@@ -36,6 +36,31 @@ def initialize_generation(ctx: GenerationContext):
     story_data_obj["id"] = ctx.story_id
     story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
     story_data = StoryData.from_json(story_data_obj)
+
+    logger.debug("Start character image generation")
+    for character in story_data.main_characters:
+        logger.debug(f"Generating image for character: {character}")
+
+        prompt = get_character_image_prompt(character)
+        image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt)
+
+        character.original_image = image_b64
+
+        image = get_image_from_base64(image_b64)
+        removed_bg_image = ctx.background_remover_model.remove_background(image)
+        character.removed_bg_image = get_base64_from_image(removed_bg_image)
+        logger.debug(f"Generated image for character: {character}")
+
+    logger.debug("Start scene image generation")
+    for scene in story_data.main_scenes:
+        logger.debug(f"Generating image for scene: {scene}")
+
+        prompt = get_character_image_prompt(scene)
+        image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt, shape="landscape")
+
+        scene.image = image_b64
+        logger.debug(f"Generated image for scene: {scene}")
+
     ctx.db_connector.write(story_data)
 
     initial_history = append_openai_message(story_data_raw, role="assistant", history=history)
@@ -64,12 +89,12 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
                 prompt = get_story_until_choices_opportunity_prompt(ctx.config, story_data, current_num_choices,
                                                                     used_choice_opportunity, current_chapter)
             else:  # In the middle of chapter
-                prompt = story_based_on_selected_choice_prompt(ctx.config, story_data, choice, current_num_choices,
-                                                               used_choice_opportunity, current_chapter)
+                prompt = get_story_based_on_selected_choice_prompt(ctx.config, story_data, choice, current_num_choices,
+                                                                   used_choice_opportunity, current_chapter)
         elif state is BranchingType.CHAPTER_END:
-            prompt = story_until_chapter_end_prompt(ctx.config, story_data, parent_chunk)
+            prompt = get_story_until_chapter_end_prompt(ctx.config, story_data, parent_chunk)
         elif state is BranchingType.GAME_END:
-            prompt = story_until_game_end_prompt(ctx.config, story_data, parent_chunk)
+            prompt = get_story_until_game_end_prompt(ctx.config, story_data, parent_chunk)
         else:
             logger.error(f"Invalid state: {state}")
             exit(1)

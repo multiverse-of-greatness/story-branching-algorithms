@@ -1,13 +1,12 @@
+import base64
 import copy
 import json
 import re
-from pathlib import Path
+from io import BytesIO
 
-import typer
-from loguru import logger
+from PIL import Image
 
-from .models.story_data import StoryData
-from .types.openai import OpenAIRole, ConversationHistory
+from src.types.openai import OpenAIRole, ConversationHistory
 
 
 def append_openai_message(message: str,
@@ -41,18 +40,12 @@ def parse_json_string(json_string: str) -> dict:
     return json.loads(json_string)
 
 
-def validate_existing_plot(existing_plot_path: str):
-    if existing_plot_path and not Path(existing_plot_path).exists():
-        logger.error(f"Existing plot file not found: {existing_plot_path}")
-        raise typer.Abort()
+def get_image_from_base64(b64: str) -> Image:
+    image = base64.b64decode(b64)
+    return Image.open(BytesIO(image))
 
-    if existing_plot_path:
-        try:
-            with open(existing_plot_path, "r") as file:
-                content = json.load(file)
-                story_data_obj = content["parsed"]
-                StoryData.from_json(story_data_obj)
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Existing plot file not valid: {existing_plot_path}")
-            logger.error(e)
-            raise typer.Abort()
+
+def get_base64_from_image(image: Image) -> str:
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()

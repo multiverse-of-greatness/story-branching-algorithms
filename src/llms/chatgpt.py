@@ -9,7 +9,7 @@ from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
 from tiktoken import get_encoding
 
 from src.llms.llm import LLM
-from src.prompts import fix_invalid_json_prompt
+from src.prompts import get_fix_invalid_json_prompt
 from src.utils import append_openai_message, parse_json_string
 from ..models.generation_context import GenerationContext
 from ..types.openai import ConversationHistory
@@ -75,7 +75,7 @@ class ChatGPT(LLM):
             raise e
 
     def fix_invalid_json_generation(self, old_response: str, error_msg: str) -> tuple[str, dict]:
-        fix_json_prompt = fix_invalid_json_prompt(old_response, error_msg)
+        fix_json_prompt = get_fix_invalid_json_prompt(old_response, error_msg)
         retry_history = append_openai_message("You are a helpful coding AI assistant.", "system")
         retry_history = append_openai_message(fix_json_prompt, "user", retry_history)
         logger.warning(f"Retrying with: {retry_history}")

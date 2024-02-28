@@ -1,9 +1,9 @@
 import random
 
-from .models.generation_config import GenerationConfig
-from .models.story_chunk import StoryChunk
-from .models.story_data import StoryData
-from .models.story.story_choice import StoryChoice
+from src.models.generation_config import GenerationConfig
+from src.models.story.story_choice import StoryChoice
+from src.models.story_chunk import StoryChunk
+from src.models.story_data import StoryData
 
 JSON_MAGIC_PHRASE = "Return output in JSON format and only the JSON in the Markdown code block. JSON."
 
@@ -58,20 +58,21 @@ Currently used: {used_opportunity} out of {config.max_num_choices_opportunity} f
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
+"story": [{{"id": id signifies the order, "speaker": speaker name or "Narration", "speaker_id": id of the speaking character or -1 for narration, "scene_title": title of a current scene, "scene_id": id of the current scene, "text": dialogue or narration}}],
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}"""
 
 
-def story_based_on_selected_choice_prompt(config: GenerationConfig, story_data: StoryData, selected_choice: StoryChoice,
-                                          num_choices: int, used_opportunity: int, chapter: int) -> str:
+def get_story_based_on_selected_choice_prompt(config: GenerationConfig, story_data: StoryData,
+                                              selected_choice: StoryChoice,
+                                              num_choices: int, used_opportunity: int, chapter: int) -> str:
     return f"""Generate possible narratives and dialogues for a {config.game_genre} game, based on the selected choice with {num_choices} possible choices. {JSON_MAGIC_PHRASE}
 
 # Output format
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
+"story": [{{"id": id signifies the order, "speaker": speaker name or "Narration", "speaker_id": id of the speaking character or -1 for narration, "scene_title": title of a current scene, "scene_id": id of the current scene, "text": dialogue or narration}}],
 "choices": [{{"id": id, "choice": choice, "description": description}}]
 }}
 
@@ -88,14 +89,14 @@ Currently used: {used_opportunity} out of {config.max_num_choices_opportunity} f
 {selected_choice}"""
 
 
-def story_until_chapter_end_prompt(config: GenerationConfig, story_data: StoryData, story_chunk: StoryChunk) -> str:
+def get_story_until_chapter_end_prompt(config: GenerationConfig, story_data: StoryData, story_chunk: StoryChunk) -> str:
     return f"""Generate possible narratives and dialogues for a {config.game_genre} game, culminating in the end of the chapter. {JSON_MAGIC_PHRASE}
 
 # Output format
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}]
+"story": [{{"id": id signifies the order, "speaker": speaker name or "Narration", "speaker_id": id of the speaking character or -1 for narration, "scene_title": title of a current scene, "scene_id": id of the current scene, "text": dialogue or narration}}]
 }}
 
 # The story so far
@@ -105,7 +106,7 @@ def story_until_chapter_end_prompt(config: GenerationConfig, story_data: StoryDa
 {story_data.chapter_synopses[story_chunk.chapter].synopsis}"""
 
 
-def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData, story_chunk: StoryChunk) -> str:
+def get_story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData, story_chunk: StoryChunk) -> str:
     selected_ending_idx = random.randint(0, config.num_endings - 1)
     return f"""Generate possible narratives and dialogues for a {config.game_genre} game, culminating in the end of the game. {JSON_MAGIC_PHRASE}
 
@@ -113,7 +114,7 @@ def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData,
 {{
 "id": id,
 "story_so_far": story so far,
-"story": [{{"id": id signifies the order, "speaker": speaker name or -1 for narration, "text": dialogue or narration}}],
+"story": [{{"id": id signifies the order, "speaker": speaker name or "Narration", "speaker_id": id of the speaking character or -1 for narration, "scene_title": title of a current scene, "scene_id": id of the current scene, "text": dialogue or narration}}],
 }}
 
 # The story so far
@@ -121,18 +122,3 @@ def story_until_game_end_prompt(config: GenerationConfig, story_data: StoryData,
 
 # The selected ending
 {story_data.endings[selected_ending_idx]}"""
-
-
-def fix_invalid_json_prompt(old_response: str, error_msg: str) -> str:
-    return f"""Fix the following incorrect JSON data. Correct the syntax and provide new values if needed. Continue the generation if you found that the original is incomplete. The original message is provided between === and ===. {JSON_MAGIC_PHRASE}
-
-# Error message
-{error_msg}
-
-# Original (Invalid JSON)
-===
-{old_response}
-===
-
-# Fixed (Corrected JSON)
-"""

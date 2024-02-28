@@ -10,9 +10,12 @@ app = typer.Typer()
 
 @app.command()
 def calculate_cost_per_story(story_id: str):
-    input_path = Path("outputs") / story_id / f"{os.getenv('GENERATION_MODEL')}.json"
-    with open(input_path, "r") as f:
+    responses_path = Path("outputs") / story_id / f"{os.getenv('GENERATION_MODEL')}.json"
+    plot_path = Path("outputs") / story_id / "plot.json"
+    with open(responses_path, "r") as f:
         responses = json.load(f)
+    with open(plot_path, "r") as f:
+        plot = json.load(f)
     prompt_tokens = responses["prompt_tokens"]
     completion_tokens = responses["completion_tokens"]
 
@@ -30,6 +33,21 @@ def calculate_cost_per_story(story_id: str):
     print(f"Prompt cost: ${prompt_cost:.2f}")
     print(f"Completion cost: ${completion_cost:.2f}")
     print(f"Total cost: ${total_cost:.2f}")
+
+    price_per_character_image = 0.080
+    price_per_scene_image = 0.120
+
+    num_characters = len(plot["parsed"]["main_characters"])
+    num_scenes = len(plot["parsed"]["main_scenes"])
+
+    character_images_cost = num_characters * price_per_character_image
+    scene_images_cost = num_scenes * price_per_scene_image
+
+    print(f"Character images cost: ${character_images_cost:.2f}")
+    print(f"Scene images cost: ${scene_images_cost:.2f}")
+
+    total_cost += character_images_cost + scene_images_cost
+    print(f"Total cost (including images): ${total_cost:.2f}")
 
 
 @app.command()

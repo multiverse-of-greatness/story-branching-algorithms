@@ -6,12 +6,14 @@ from dotenv import load_dotenv
 from loguru import logger
 from typing_extensions import Annotated
 
+from src.bg_remover.bria import Bria
 from src.core import process_generation_queue, initialize_generation
 from src.databases.Neo4JConnector import Neo4JConnector
+from src.image_gen.dall_e_3 import DALL_E_3
 from src.llms.chatgpt import ChatGPT
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
-from src.utils import validate_existing_plot
+from src.utils.validators import validate_existing_plot, validate_config
 
 
 def main(
@@ -30,7 +32,7 @@ def main(
         ] = 5,
         num_main_scenes: Annotated[
             Optional[int], typer.Option(help="Number of scenes (location)")
-        ] = 3,
+        ] = 5,
         min_num_choices: Annotated[
             Optional[int], typer.Option(help="Minimum number of choices")
         ] = 2,
@@ -40,11 +42,11 @@ def main(
         min_num_choices_opportunity: Annotated[
             Optional[int],
             typer.Option(help="Minimum number of choice opportunities per chapter"),
-        ] = 3,
+        ] = 2,
         max_num_choices_opportunity: Annotated[
             Optional[int],
             typer.Option(help="Maximum number of choice opportunities per chapter"),
-        ] = 5,
+        ] = 3,
         dbname: Annotated[
             Optional[str], typer.Option(help="Database name"),
         ] = None,
@@ -53,28 +55,22 @@ def main(
         ] = None,
 ):
     validate_existing_plot(existing_plot)
+    validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
+                    num_chapters, num_endings, num_main_characters, num_main_scenes)
 
-    config = GenerationConfig(
-        min_num_choices,
-        max_num_choices,
-        min_num_choices_opportunity,
-        max_num_choices_opportunity,
-        game_genre,
-        themes,
-        num_chapters,
-        num_endings,
-        num_main_characters,
-        num_main_scenes,
-        existing_plot,
-    )
+    config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
+                              max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
+                              num_main_characters, num_main_scenes, existing_plot)
     logger.info(f"Generation config: {config}")
 
     neo4j_connector = Neo4JConnector()
     neo4j_connector.set_database(dbname)
 
     chatgpt = ChatGPT()
+    dall_e_3 = DALL_E_3()
+    bria = Bria()
 
-    generation_context = GenerationContext(neo4j_connector, chatgpt, config)
+    generation_context = GenerationContext(neo4j_connector, chatgpt, dall_e_3, bria, config)
     logger.info(f"Generation context: {generation_context}")
 
     initial_history, story_data = initialize_generation(generation_context)
