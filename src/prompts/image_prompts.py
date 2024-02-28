@@ -24,7 +24,7 @@ def get_character_image_prompt(character: CharacterData) -> str:
 
 
 def get_scene_image_prompt(scene: SceneData) -> str:
-    prompt_template = ("An image of a 2D scene artwork in classic RPG game in full-body landscape scene background. "
+    prompt_template = ("An image of a 2D scene artwork in classic RPG game in landscape scene background. "
                        "This is a scene of {title} located in {location}. The scene is {description}. No text. "
                        "ne image only. Centered. No drawings. Anime-style asset.")
 
