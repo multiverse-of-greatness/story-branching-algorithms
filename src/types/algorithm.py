@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Optional
 
-from src.models.StoryChunk import StoryChunk
-from src.models.story.StoryChoice import StoryChoice
+from src.models.story_chunk import StoryChunk
+from src.models.story.story_choice import StoryChoice
 
 type Frontiers = list[tuple[int, int, Optional[StoryChunk], Optional[StoryChoice], BranchingType]]
 

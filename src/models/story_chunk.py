@@ -3,8 +3,8 @@ import json
 from neo4j import Session
 
 from ..types.openai import ConversationHistory
-from .story.StoryChoice import StoryChoice
-from .story.StoryNarrative import StoryNarrative
+from .story.story_choice import StoryChoice
+from .story.story_narrative import StoryNarrative
 
 
 class StoryChunk:

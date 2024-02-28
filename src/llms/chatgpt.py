@@ -11,7 +11,7 @@ from tiktoken import get_encoding
 from src.llms.llm import LLM
 from src.prompts import fix_invalid_json_prompt
 from src.utils import append_openai_message, parse_json_string
-from ..models.GenerationContext import GenerationContext
+from ..models.generation_context import GenerationContext
 from ..types.openai import ConversationHistory
 
 

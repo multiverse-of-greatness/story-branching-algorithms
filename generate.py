@@ -9,8 +9,8 @@ from typing_extensions import Annotated
 from src.core import process_generation_queue, initialize_generation
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.llms.chatgpt import ChatGPT
-from src.models.GenerationConfig import GenerationConfig
-from src.models.GenerationContext import GenerationContext
+from src.models.generation_config import GenerationConfig
+from src.models.generation_context import GenerationContext
 from src.utils import validate_existing_plot
 
 

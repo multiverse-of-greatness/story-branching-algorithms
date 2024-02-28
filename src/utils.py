@@ -6,7 +6,7 @@ from pathlib import Path
 import typer
 from loguru import logger
 
-from .models.StoryData import StoryData
+from .models.story_data import StoryData
 from .types.openai import OpenAIRole, ConversationHistory
 
 

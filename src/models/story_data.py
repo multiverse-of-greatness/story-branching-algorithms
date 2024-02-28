@@ -2,11 +2,11 @@ import json
 from neo4j import Session
 
 from src.databases.DBModel import DBModel
-from .StoryChunk import StoryChunk
-from .story.ChapterSynopsis import ChapterSynopsis
-from .story.CharacterData import CharacterData
-from .story.EndingData import EndingData
-from .story.SceneData import SceneData
+from .story_chunk import StoryChunk
+from .story.chapter_synopsis import ChapterSynopsis
+from .story.character_data import CharacterData
+from .story.ending_data import EndingData
+from .story.scene_data import SceneData
 
 
 class StoryData(DBModel):

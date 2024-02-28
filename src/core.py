@@ -5,9 +5,9 @@ import uuid
 
 from loguru import logger
 
-from src.models.GenerationContext import GenerationContext
-from src.models.StoryChunk import StoryChunk
-from src.models.StoryData import StoryData
+from src.models.generation_context import GenerationContext
+from src.models.story_chunk import StoryChunk
+from src.models.story_data import StoryData
 from src.prompts import (get_story_until_choices_opportunity_prompt,
                          story_based_on_selected_choice_prompt,
                          story_until_chapter_end_prompt,

@@ -1,9 +1,9 @@
 import random
 
-from .models.GenerationConfig import GenerationConfig
-from .models.StoryChunk import StoryChunk
-from .models.StoryData import StoryData
-from .models.story.StoryChoice import StoryChoice
+from .models.generation_config import GenerationConfig
+from .models.story_chunk import StoryChunk
+from .models.story_data import StoryData
+from .models.story.story_choice import StoryChoice
 
 JSON_MAGIC_PHRASE = "Return output in JSON format and only the JSON in the Markdown code block. JSON."
 
@@ -29,7 +29,7 @@ def get_plot_prompt(config: GenerationConfig) -> str:
 "genre": game genre,
 "themes": [words],
 "main_scenes": [{{"id": id, "title": location name, "location": where is this place, "description": describe location}}].
-"main_characters": [{{"id": id, "first_name": first name, "last_name": last name, "species": species, "age": exact age or description, "role": role of the character, "background": background story, "place_of_birth": location, "physical_appearance": [details]}}]
+"main_characters": [{{"id": id, "first_name": first name, "last_name": last name, "species": species, "age": exact age or description, "gender": gender of the character, "role": role of the character, "background": background story, "place_of_birth": location, "physical_appearance": [details]}}]
 "synopsis": synopsis,
 "chapter_synopses": [{{"chapter": chapter_number, "synopsis": synopsis, "character_ids": id of featured characters in this chapter, "scene_ids": id of featured scenes in this chapter}}]
 "beginning": beginning of the story,

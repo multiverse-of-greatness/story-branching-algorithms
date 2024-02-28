@@ -7,7 +7,7 @@ from typing import Optional
 
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.llms.llm import LLM
-from src.models.GenerationConfig import GenerationConfig
+from src.models.generation_config import GenerationConfig
 from ..types.algorithm import Frontiers, BranchingType
 from ..types.openai import ConversationHistory
 

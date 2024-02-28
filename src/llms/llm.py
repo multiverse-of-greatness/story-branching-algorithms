@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from ..models.GenerationContext import GenerationContext
+from ..models.generation_context import GenerationContext
 from ..types.openai import ConversationHistory
 
 
