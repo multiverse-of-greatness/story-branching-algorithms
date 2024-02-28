@@ -8,6 +8,8 @@ from typing import Optional
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.llms.llm import LLM
 from src.models.generation_config import GenerationConfig
+from .story.story_choice import StoryChoice
+from .story_chunk import StoryChunk
 from ..bg_remover.bg_removal_model import BackgroundRemovalModel
 from ..image_gen.image_gen_model import ImageGenModel
 from ..types.algorithm import Frontiers, BranchingType
@@ -46,7 +48,7 @@ class GenerationContext:
     def get_frontiers(self):
         return self._frontiers
 
-    def set_frontiers(self, frontiers):
+    def set_frontiers(self, frontiers: Frontiers):
         self._frontiers = copy.deepcopy(frontiers)
         self.sync_file()
 
@@ -72,7 +74,10 @@ class GenerationContext:
             'completed_at') else None
         ctx._initial_history = json_obj['initial_history']
         ctx._frontiers = list(
-            map(lambda x: (x[0], x[1], x[2], x[3], BranchingType.from_string(x[4])), json_obj['frontiers']))
+            map(lambda x: (
+                x[0], x[1], None if x[2] is None else StoryChunk.from_json(x[2]),
+                None if x[3] is None else StoryChoice.from_json(x[3]), BranchingType.from_string(x[4])),
+                json_obj['frontiers']))
         return ctx
 
     def to_json(self) -> dict:
@@ -86,7 +91,9 @@ class GenerationContext:
             'is_generation_completed': self.is_generation_completed,
             'output_path': str(self.output_path),
             'initial_history': self._initial_history,
-            'frontiers': list(map(lambda x: (x[0], x[1], x[2], x[3], BranchingType.to_string(x[4])), self._frontiers)),
+            'frontiers': list(map(lambda x: (
+                x[0], x[1], None if x[2] is None else x[2].to_json(), None if x[3] is None else x[3].to_json(),
+                BranchingType.to_string(x[4])), self._frontiers)),
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
