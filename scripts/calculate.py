@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 from pathlib import Path
@@ -9,7 +10,7 @@ app = typer.Typer()
 
 
 @app.command()
-def calculate_cost_per_story(story_id: str):
+def cost_per_story(story_id: str):
     responses_path = Path("outputs") / story_id / f"{os.getenv('GENERATION_MODEL')}.json"
     plot_path = Path("outputs") / story_id / "plot.json"
     with open(responses_path, "r") as f:
@@ -51,13 +52,13 @@ def calculate_cost_per_story(story_id: str):
 
 
 @app.command()
-def calculate_time_to_completion(story_id: str):
+def time_to_completion(story_id: str):
     input_path = Path("outputs") / story_id / "context.json"
     with open(input_path, "r") as f:
         context = json.load(f)
-    created_at = context["created_at"]
-    updated_at = context["updated_at"]
-    completed_at = context["completed_at"]
+    created_at = datetime.fromisoformat(context["created_at"])
+    updated_at = datetime.fromisoformat(context["updated_at"])
+    completed_at = datetime.fromisoformat(context["completed_at"])
 
     print(f"Created at: {created_at}")
     print(f"Updated at: {updated_at}")
@@ -65,11 +66,14 @@ def calculate_time_to_completion(story_id: str):
 
     if completed_at is not None:
         time_to_completion = completed_at - created_at
-        print(f"Time to completion: {time_to_completion}")
+        hour, remainder = divmod(time_to_completion.seconds, 3600)
+        minute, second = divmod(remainder, 60)
+        print(f"Time to completion: {hour} hours, {minute} minutes, {second} seconds")
     else:
         time_to_last_update = updated_at - created_at
-        print(f"Time to last update: {time_to_last_update}")
-
+        hour, remainder = divmod(time_to_last_update.seconds, 3600)
+        minute, second = divmod(remainder, 60)
+        print(f"Time to last update: {hour} hours, {minute} minutes, {second} seconds")
 
 if __name__ == "__main__":
     load_dotenv()
