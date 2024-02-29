@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, Optional
 
 from neo4j import GraphDatabase
 
@@ -19,7 +19,7 @@ class Neo4JConnector:
     def uri(self):
         return "bolt://{}:{}".format(self.host, self.port)
 
-    def set_database(self, dbname: str):
+    def set_database(self, dbname: Optional[str]):
         if dbname is not None:
             self.dbname = dbname
 
