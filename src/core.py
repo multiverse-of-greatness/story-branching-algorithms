@@ -49,7 +49,7 @@ def initialize_generation(ctx: GenerationContext):
 
         image = get_image_from_base64(image_b64)
         removed_bg_image = ctx.background_remover_model.remove_background(image)
-        character.removed_bg_image = get_base64_from_image(removed_bg_image)
+        character.image = get_base64_from_image(removed_bg_image)
         logger.debug(f"Generated image for character: {character}")
 
     logger.debug("Start scene image generation")
