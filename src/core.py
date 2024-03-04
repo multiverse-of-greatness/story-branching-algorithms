@@ -39,29 +39,32 @@ def initialize_generation(ctx: GenerationContext):
     story_data_obj["approach"] = ctx.approach
     story_data = StoryData.from_json(story_data_obj)
 
-    logger.debug("Start character image generation")
-    for character in story_data.main_characters:
-        logger.debug(f"Generating image for character: {character}")
+    if ctx.config.enable_image_generation:
+        logger.debug("Start character image generation")
+        for character in story_data.main_characters:
+            logger.debug(f"Generating image for character: {character}")
 
-        prompt = get_character_image_prompt(character)
-        image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt)
+            prompt = get_character_image_prompt(character)
+            image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt)
 
-        character.original_image = image_b64
+            character.original_image = image_b64
 
-        image = get_image_from_base64(image_b64)
-        removed_bg_image = ctx.background_remover_model.remove_background(image)
-        character.image = get_base64_from_image(removed_bg_image)
-        logger.debug(f"Generated image for character: {character}")
+            image = get_image_from_base64(image_b64)
+            removed_bg_image = ctx.background_remover_model.remove_background(image)
+            character.image = get_base64_from_image(removed_bg_image)
+            logger.debug(f"Generated image for character: {character}")
 
-    logger.debug("Start scene image generation")
-    for scene in story_data.main_scenes:
-        logger.debug(f"Generating image for scene: {scene}")
+        logger.debug("Start scene image generation")
+        for scene in story_data.main_scenes:
+            logger.debug(f"Generating image for scene: {scene}")
 
-        prompt = get_scene_image_prompt(scene)
-        image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt, shape="landscape")
+            prompt = get_scene_image_prompt(scene)
+            image_b64 = ctx.image_gen_model.generate_image_from_text_prompt(prompt, shape="landscape")
 
-        scene.image = image_b64
-        logger.debug(f"Generated image for scene: {scene}")
+            scene.image = image_b64
+            logger.debug(f"Generated image for scene: {scene}")
+    else:
+        logger.debug("Image generation is disabled")
 
     ctx.db_connector.write(story_data)
 

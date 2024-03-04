@@ -56,6 +56,9 @@ def main(
         approach: Annotated[
             Optional[Union[Literal["proposed"]] | Literal["baseline"]], typer.Option(help="Approach to be used"),
         ] = "proposed",
+        enable_image_generation: Annotated[
+            Optional[bool], typer.Option(help="Enable image generation"),
+        ] = False,
 ):
     valida_approach(str(approach))
     validate_existing_plot(existing_plot)
@@ -64,7 +67,7 @@ def main(
 
     config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
                               max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, existing_plot)
+                              num_main_characters, num_main_scenes, enable_image_generation, existing_plot)
     logger.info(f"Generation config: {config}")
 
     neo4j_connector = Neo4JConnector()
