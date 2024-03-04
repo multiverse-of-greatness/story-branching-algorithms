@@ -36,6 +36,7 @@ def initialize_generation(ctx: GenerationContext):
 
     story_data_obj["id"] = ctx.story_id
     story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
+    story_data_obj["approach"] = ctx.approach
     story_data = StoryData.from_json(story_data_obj)
 
     logger.debug("Start character image generation")

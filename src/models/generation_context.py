@@ -18,15 +18,17 @@ from ..types.openai import ConversationHistory
 
 class GenerationContext:
     def __init__(self, db_connector: Neo4JConnector, generation_model: LLM, image_generation_model: ImageGenModel,
-                 background_removal_model: BackgroundRemovalModel, config: GenerationConfig, story_id: str = None):
+                 background_removal_model: BackgroundRemovalModel, approach: str, config: GenerationConfig,
+                 story_id: str = None):
         self.db_connector = db_connector
         self.generation_model = generation_model
         self.image_gen_model = image_generation_model
         self.background_remover_model = background_removal_model
+        self.approach = approach
         self.config = config
         self.story_id = story_id if story_id is not None else str(uuid.uuid1())
         self.is_generation_completed = False
-        self.output_path = Path("outputs") / self.story_id
+        self.output_path = Path("outputs") / self.approach / self.story_id
         self.output_path.mkdir(exist_ok=True, parents=True)
         self._initial_history: Optional[ConversationHistory] = None
         self._frontiers: Frontiers = [(1, 0, None, None, BranchingType.BRANCHING)]
@@ -66,7 +68,8 @@ class GenerationContext:
                   image_generation_model: ImageGenModel,
                   background_removal_model: BackgroundRemovalModel) -> 'GenerationContext':
         ctx = GenerationContext(db_connector, generation_model, image_generation_model, background_removal_model,
-                                GenerationConfig.from_json(json_obj['config']), json_obj['story_id'])
+                                GenerationConfig.from_json(json_obj['config']), json_obj['approach'],
+                                json_obj['story_id'])
         ctx.is_generation_completed = json_obj['is_generation_completed']
         ctx.created_at = datetime.fromisoformat(json_obj['created_at'])
         ctx.updated_at = datetime.fromisoformat(json_obj['updated_at'])
@@ -86,6 +89,7 @@ class GenerationContext:
             'generation_model': str(self.generation_model),
             'image_generation_model': str(self.image_gen_model),
             'background_removal_model': str(self.background_remover_model),
+            'approach': self.approach,
             'config': self.config.to_json(),
             'story_id': self.story_id,
             'is_generation_completed': self.is_generation_completed,
@@ -102,8 +106,8 @@ class GenerationContext:
     def __str__(self):
         return (f"GenerationContext(db_connector={self.db_connector}, generation_model={self.generation_model}, "
                 f"image_generation_model={self.image_gen_model}, "
-                f"background_removal_model={self.background_remover_model}, config={self.config}, "
-                f"story_id={self.story_id}, output_path={self.output_path}, "
+                f"background_removal_model={self.background_remover_model}, approach={self.approach}, "
+                f"config={self.config}, story_id={self.story_id}, output_path={self.output_path}, "
                 f"is_generation_completed={self.is_generation_completed}, initial_history={self._initial_history}, "
                 f"frontiers={self._frontiers}, created_at={self.created_at}, updated_at={self.updated_at}, "
                 f"completed_at={self.completed_at})")

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union, Literal
 
 import typer
 from dotenv import load_dotenv
@@ -13,7 +13,7 @@ from src.image_gen.dall_e_3 import DALL_E_3
 from src.llms.chatgpt import ChatGPT
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
-from src.utils.validators import validate_existing_plot, validate_config
+from src.utils.validators import validate_existing_plot, validate_config, valida_approach
 
 
 def main(
@@ -53,7 +53,11 @@ def main(
         existing_plot: Annotated[
             Optional[str], typer.Option(help="Existing plot to be used"),
         ] = None,
+        approach: Annotated[
+            Optional[Union[Literal["proposed"]] | Literal["baseline"]], typer.Option(help="Approach to be used"),
+        ] = "proposed",
 ):
+    valida_approach(str(approach))
     validate_existing_plot(existing_plot)
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
@@ -70,7 +74,7 @@ def main(
     dall_e_3 = DALL_E_3()
     bria = Bria()
 
-    generation_context = GenerationContext(neo4j_connector, chatgpt, dall_e_3, bria, config)
+    generation_context = GenerationContext(neo4j_connector, chatgpt, dall_e_3, bria, str(approach), config)
     logger.info(f"Generation context: {generation_context}")
 
     initial_history, story_data = initialize_generation(generation_context)
