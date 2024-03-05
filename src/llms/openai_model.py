@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 from json.decoder import JSONDecodeError
@@ -30,12 +31,14 @@ class OpenAIModel(LLM):
     def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[str, dict]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
 
-        messages = self.rolling_history(messages)
+        copied_messages = copy.deepcopy(messages)
+
+        copied_messages = self.rolling_history(copied_messages)
 
         try:
             chat_completion = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=messages,
+                messages=copied_messages,
                 response_format={"type": "json_object"},
                 seed=42
             )
@@ -58,7 +61,7 @@ class OpenAIModel(LLM):
 
             with open(ctx.output_path / "histories.json", "r+") as file:
                 histories = json.load(file)
-                histories["histories"].append(messages)
+                histories["histories"].append(copied_messages)
                 file.seek(0)
                 file.write(json.dumps(histories, indent=2))
 
@@ -69,7 +72,7 @@ class OpenAIModel(LLM):
         except (APITimeoutError, APIConnectionError, RateLimitError, APIError) as e:
             logger.warning(f"OpenAI API error: {e}")
             sleep(3)
-            return self.generate_content(ctx, messages)
+            return self.generate_content(ctx, copied_messages)
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise e

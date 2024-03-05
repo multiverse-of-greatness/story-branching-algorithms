@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 from json import JSONDecodeError
@@ -39,14 +40,15 @@ class GoogleModel(LLM):
     def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[str, dict]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
 
-        messages = self.rolling_history(messages)
-        last_message = messages.pop()
+        copied_messages = copy.deepcopy(messages)
+        copied_messages = self.rolling_history(copied_messages)
+        last_message = copied_messages.pop()
         if last_message.get("role") == "system" or last_message.get("role") == "assistant":
             raise ValueError(f"Last message role is not user: {last_message.get('role')}")
         current_message = last_message.get("content")
 
-        messages = map_openai_history_to_google_history(messages)
-        chat = self.client.start_chat(history=messages)
+        copied_messages = map_openai_history_to_google_history(copied_messages)
+        chat = self.client.start_chat(history=copied_messages)
 
         try:
             chat_completion = chat.send_message(current_message, safety_settings={
@@ -65,11 +67,11 @@ class GoogleModel(LLM):
                 with open(output_path, "r") as f:
                     responses = json.load(f)
 
-            print(response)
-
             responses["responses"].append(response)
-            prompt_tokens = self.count_token(
-                self.get_history_message(messages + map_openai_history_to_google_history([last_message])))
+
+            copied_messages = copied_messages + map_openai_history_to_google_history([last_message])
+
+            prompt_tokens = self.count_token(self.get_history_message(copied_messages))
             responses["prompt_tokens"] += prompt_tokens
             response_tokens = self.count_token(response)
             responses["completion_tokens"] += response_tokens
@@ -79,7 +81,7 @@ class GoogleModel(LLM):
 
             with open(ctx.output_path / "histories.json", "r+") as file:
                 histories = json.load(file)
-                histories["histories"].append(messages)
+                histories["histories"].append(map_google_history_to_openai_history(copied_messages))
                 file.seek(0)
                 file.write(json.dumps(histories, indent=2))
 
@@ -89,7 +91,7 @@ class GoogleModel(LLM):
             raise e
         except (ServiceUnavailable, InternalServerError, TooManyRequests, DeadlineExceeded) as e:
             logger.warning(f"Gemini 1.0 Pro API error: {e}")
-            converted_history = map_google_history_to_openai_history(messages)
+            converted_history = map_google_history_to_openai_history(copied_messages)
             sleep(3)
             return self.generate_content(ctx, converted_history)
         except Exception as e:
