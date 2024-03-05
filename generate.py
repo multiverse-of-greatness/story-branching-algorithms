@@ -72,7 +72,7 @@ def main(
     neo4j_connector = Neo4JConnector()
 
     llm = get_generation_model(os.getenv("GENERATION_MODEL"))
-    image_gen = get_image_generation_model(os.getenv("IMAGE_GEN_MODEL"))
+    image_gen = get_image_generation_model(os.getenv("IMAGE_GENERATION_MODEL"))
     bria = Bria()
 
     generation_context = GenerationContext(neo4j_connector, llm, image_gen, bria, str(approach), config)
