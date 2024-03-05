@@ -72,7 +72,7 @@ class OpenAIModel(LLM):
         except (APITimeoutError, APIConnectionError, RateLimitError, APIError) as e:
             logger.warning(f"OpenAI API error: {e}")
             sleep(3)
-            return self.generate_content(ctx, copied_messages)
+            return self.generate_content(ctx, messages)
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise e

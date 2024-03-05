@@ -49,9 +49,6 @@ def main(
             Optional[int],
             typer.Option(help="Maximum number of choice opportunities per chapter"),
         ] = 3,
-        dbname: Annotated[
-            Optional[str], typer.Option(help="Database name"),
-        ] = None,
         existing_plot: Annotated[
             Optional[str], typer.Option(help="Existing plot to be used"),
         ] = None,
@@ -73,7 +70,6 @@ def main(
     logger.info(f"Generation config: {config}")
 
     neo4j_connector = Neo4JConnector()
-    neo4j_connector.set_database(dbname)
 
     llm = get_generation_model(os.getenv("GENERATION_MODEL"))
     image_gen = get_image_generation_model(os.getenv("IMAGE_GEN_MODEL"))

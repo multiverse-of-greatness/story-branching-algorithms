@@ -91,9 +91,8 @@ class GoogleModel(LLM):
             raise e
         except (ServiceUnavailable, InternalServerError, TooManyRequests, DeadlineExceeded) as e:
             logger.warning(f"Gemini 1.0 Pro API error: {e}")
-            converted_history = map_google_history_to_openai_history(copied_messages)
             sleep(3)
-            return self.generate_content(ctx, converted_history)
+            return self.generate_content(ctx, messages)
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise e
