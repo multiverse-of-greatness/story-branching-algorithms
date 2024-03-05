@@ -7,12 +7,13 @@ from dotenv import load_dotenv
 from loguru import logger
 from typing_extensions import Annotated
 
+import src.baseline as baseline
+import src.proposed as proposed
 from src.bg_remover.bria import Bria
 from src.core import initialize_generation
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
-from src.proposed import process_generation_queue
 from src.utils.generative_models import get_generation_model, get_image_generation_model
 from src.utils.validators import validate_existing_plot, validate_config, valida_approach
 
@@ -84,7 +85,13 @@ def main(
     initial_history, story_data = initialize_generation(generation_context)
     generation_context.set_initial_history(initial_history)
 
-    process_generation_queue(generation_context, story_data)
+    if approach == "baseline":
+        baseline.process_generation_queue(generation_context, story_data)
+    elif approach == "proposed":
+        proposed.process_generation_queue(generation_context, story_data)
+    else:
+        logger.error(f"Invalid approach: {approach}")
+        exit(1)
 
 
 if __name__ == "__main__":
