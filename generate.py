@@ -8,10 +8,11 @@ from loguru import logger
 from typing_extensions import Annotated
 
 from src.bg_remover.bria import Bria
+from src.core import initialize_generation
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
-from src.proposed import process_generation_queue, initialize_generation
+from src.proposed import process_generation_queue
 from src.utils.generative_models import get_generation_model, get_image_generation_model
 from src.utils.validators import validate_existing_plot, validate_config, valida_approach
 
