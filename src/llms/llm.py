@@ -8,11 +8,8 @@ from ..types.openai import ConversationHistory
 
 
 class LLM(ABC):
-
-    @property
-    @abstractmethod
-    def max_tokens(self):
-        pass
+    def __init__(self, max_tokens: int):
+        self.max_tokens = None
 
     @staticmethod
     @abstractmethod

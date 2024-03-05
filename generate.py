@@ -1,5 +1,6 @@
+import os
 from pathlib import Path
-from typing import Optional, Union, Literal
+from typing import Optional
 
 import typer
 from dotenv import load_dotenv
@@ -7,12 +8,12 @@ from loguru import logger
 from typing_extensions import Annotated
 
 from src.bg_remover.bria import Bria
-from src.core import process_generation_queue, initialize_generation
 from src.databases.Neo4JConnector import Neo4JConnector
 from src.image_gen.dall_e_3 import DALL_E_3
-from src.llms.chatgpt import ChatGPT
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
+from src.proposed import process_generation_queue, initialize_generation
+from src.utils.llms import get_generation_model
 from src.utils.validators import validate_existing_plot, validate_config, valida_approach
 
 
@@ -54,7 +55,7 @@ def main(
             Optional[str], typer.Option(help="Existing plot to be used"),
         ] = None,
         approach: Annotated[
-            Optional[Union[Literal["proposed"]] | Literal["baseline"]], typer.Option(help="Approach to be used"),
+            Optional[str], typer.Option(help="Approach to be used"),
         ] = "proposed",
         enable_image_generation: Annotated[
             Optional[bool], typer.Option(help="Enable image generation"),
@@ -73,11 +74,11 @@ def main(
     neo4j_connector = Neo4JConnector()
     neo4j_connector.set_database(dbname)
 
-    chatgpt = ChatGPT()
+    llm = get_generation_model(os.getenv("GENERATION_MODEL"))
     dall_e_3 = DALL_E_3()
     bria = Bria()
 
-    generation_context = GenerationContext(neo4j_connector, chatgpt, dall_e_3, bria, str(approach), config)
+    generation_context = GenerationContext(neo4j_connector, llm, dall_e_3, bria, str(approach), config)
     logger.info(f"Generation context: {generation_context}")
 
     initial_history, story_data = initialize_generation(generation_context)

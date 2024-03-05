@@ -6,7 +6,7 @@ from time import sleep
 from loguru import logger
 from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
                     RateLimitError)
-from tiktoken import get_encoding
+from tiktoken import encoding_for_model
 
 from src.llms.llm import LLM
 from src.prompts.utility_prompts import get_fix_invalid_json_prompt
@@ -15,16 +15,16 @@ from ..models.generation_context import GenerationContext
 from ..types.openai import ConversationHistory
 
 
-class ChatGPT(LLM):
-    max_tokens = 16385
-
-    def __init__(self):
-        self.model_name = os.getenv("GENERATION_MODEL")
+class OpenAIModel(LLM):
+    def __init__(self, model_name: str, max_tokens: int = 16385):
+        super().__init__(max_tokens)
+        self.model_name = model_name
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60)
+        self.max_tokens = max_tokens
 
     @staticmethod
     def count_token(message: str) -> int:
-        encoder = get_encoding("cl100k_base")
+        encoder = encoding_for_model(os.getenv("GENERATION_MODEL"))
         return len(encoder.encode(message))
 
     def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[str, dict]:
@@ -69,18 +69,19 @@ class ChatGPT(LLM):
         except (APITimeoutError, APIConnectionError, RateLimitError, APIError) as e:
             logger.warning(f"OpenAI API error: {e}")
             sleep(3)
-            return self.generate_content(messages)
+            return self.generate_content(ctx, messages)
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise e
 
-    def fix_invalid_json_generation(self, old_response: str, error_msg: str) -> tuple[str, dict]:
+    def fix_invalid_json_generation(self, ctx: GenerationContext, old_response: str, error_msg: str) -> tuple[
+        str, dict]:
         fix_json_prompt = get_fix_invalid_json_prompt(old_response, error_msg)
         retry_history = append_openai_message("You are a helpful coding AI assistant.", "system")
         retry_history = append_openai_message(fix_json_prompt, "user", retry_history)
         logger.warning(f"Retrying with: {retry_history}")
 
-        return self.generate_content(retry_history)
+        return self.generate_content(ctx, retry_history)
 
     def __str__(self):
-        return f"ChatGPT(model_name={self.model_name}, max_tokens={self.max_tokens})"
+        return f"OpenAIModel(model_name={self.model_name}, max_tokens={self.max_tokens})"
