@@ -7,7 +7,7 @@ from src.image_gen.image_gen_model import ImageGenModel
 from ..types.image_gen import ImageShape
 
 
-class DALL_E_3(ImageGenModel):
+class DallEThree(ImageGenModel):
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60)
 
@@ -32,4 +32,4 @@ class DALL_E_3(ImageGenModel):
         return response.data[0].b64_json
 
     def __str__(self):
-        return "DALL_E_3"
+        return "DALL·E 3"

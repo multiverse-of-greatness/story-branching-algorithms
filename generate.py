@@ -9,11 +9,10 @@ from typing_extensions import Annotated
 
 from src.bg_remover.bria import Bria
 from src.databases.Neo4JConnector import Neo4JConnector
-from src.image_gen.dall_e_3 import DALL_E_3
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
 from src.proposed import process_generation_queue, initialize_generation
-from src.utils.llms import get_generation_model
+from src.utils.generative_models import get_generation_model, get_image_generation_model
 from src.utils.validators import validate_existing_plot, validate_config, valida_approach
 
 
@@ -75,10 +74,10 @@ def main(
     neo4j_connector.set_database(dbname)
 
     llm = get_generation_model(os.getenv("GENERATION_MODEL"))
-    dall_e_3 = DALL_E_3()
+    image_gen = get_image_generation_model(os.getenv("IMAGE_GEN_MODEL"))
     bria = Bria()
 
-    generation_context = GenerationContext(neo4j_connector, llm, dall_e_3, bria, str(approach), config)
+    generation_context = GenerationContext(neo4j_connector, llm, image_gen, bria, str(approach), config)
     logger.info(f"Generation context: {generation_context}")
 
     initial_history, story_data = initialize_generation(generation_context)
