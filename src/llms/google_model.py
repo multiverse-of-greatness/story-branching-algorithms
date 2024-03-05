@@ -59,6 +59,7 @@ class GoogleModel(LLM):
             })
 
             response = chat_completion.text.strip()
+            print(response)
 
             output_path = ctx.output_path / f"{self.model_name}.json"
             responses = {"responses": [], "prompt_tokens": 0, "completion_tokens": 0}

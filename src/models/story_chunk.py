@@ -58,9 +58,8 @@ class StoryChunk(DBModel):
         return f"StoryChunk(id={self.id}, chapter={self.chapter}, story_so_far={self.story_so_far}, story={[str(n) for n in self.story]}, choices={[str(c) for c in self.choices]})"
 
     def save_to_db(self, session: Session):
-        if len(self.history) == 0:
-            raise ValueError("current_history is None")
-
+        if self.history is None:
+            self.history = []
         session.run(
             """CREATE (storyChunk:StoryChunk {id: $id, chapter: $chapter, story_so_far: $story_so_far, 
             story: $story, history: $history, story_id: $story_id, num_opportunities: $num_opportunities})""",

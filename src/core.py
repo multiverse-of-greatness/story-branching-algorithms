@@ -32,7 +32,7 @@ def initialize_generation(ctx: GenerationContext):
     story_data_obj["approach"] = ctx.approach
     story_data = StoryData.from_json(story_data_obj)
 
-    if ctx.config.enable_image_generation:
+    if ctx.config.enable_image_generation and not ctx.config.existing_plot:
         logger.debug("Start character image generation")
         for character in story_data.main_characters:
             logger.debug(f"Generating image for character: {character}")
