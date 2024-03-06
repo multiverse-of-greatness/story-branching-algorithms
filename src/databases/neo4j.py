@@ -3,7 +3,7 @@ from typing import Callable
 
 from neo4j import GraphDatabase
 
-from .DBModel import DBModel
+from .model import DBModel
 
 
 class Neo4JConnector:

@@ -2,7 +2,7 @@ import json
 
 from neo4j import Session
 
-from src.databases.DBModel import DBModel
+from src.databases.model import DBModel
 from .story.chapter_synopsis import ChapterSynopsis
 from .story.character_data import CharacterData
 from .story.ending_data import EndingData

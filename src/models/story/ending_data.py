@@ -1,6 +1,6 @@
 from neo4j import Session
 
-from src.databases.DBModel import DBModel
+from src.databases.model import DBModel
 
 
 class EndingData(DBModel):
