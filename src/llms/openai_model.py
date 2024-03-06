@@ -21,7 +21,6 @@ class OpenAIModel(LLM):
         super().__init__(max_tokens)
         self.model_name = model_name
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60)
-        self.max_tokens = max_tokens
 
     @staticmethod
     def count_token(message: str) -> int:

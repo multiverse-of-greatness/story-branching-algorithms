@@ -24,7 +24,6 @@ class GoogleModel(LLM):
         genai.configure(api_key=os.environ["GOOGLE_AI_API_KEY"])
         self.model_name = model_name
         self.client = genai.GenerativeModel(self.model_name)
-        self.max_tokens = max_tokens
 
     def count_token(self, message: str) -> int:
         count = genai.GenerativeModel(self.model_name).count_tokens(message).total_tokens

@@ -9,7 +9,7 @@ from ..types.openai import ConversationHistory
 
 class LLM(ABC):
     def __init__(self, max_tokens: int):
-        self.max_tokens = None
+        self.max_tokens = max_tokens
 
     @staticmethod
     @abstractmethod
@@ -19,17 +19,33 @@ class LLM(ABC):
     def rolling_history(self, history: ConversationHistory) -> ConversationHistory:
         logger.debug(f"Starting rolling history with max tokens: {self.max_tokens}")
         count_tokens = 0
-        new_history = []
         for message in history:
             count_tokens += self.count_token(message["content"])
 
         if count_tokens > self.max_tokens * 0.8:  # Total tokens is over 80% of the limit
-            count_tokens = 0
-            for message in history[-1:3:-1]:
-                count_tokens += self.count_token(message["content"])
+            n_history = len(history)
+
+            new_history = []
+            if history[-1]["role"] == "user":  # If the last message is user message, keep it
+                new_history.append(history[-1])
+                count_tokens = self.count_token(history[-1]["content"])
+                start_idx = n_history - 2  # Start from the latest assistant message
+            elif history[-1]["role"] == "assistant":  # If the last message is assistant message
+                count_tokens = 0
+                start_idx = n_history - 1
+
+            for idx in range(start_idx, 3, -2):
+                if history[idx]["role"] != "assistant" or history[idx - 1]["role"] != "user":
+                    raise ValueError(f"History is not in the correct conversation format: "
+                                     f"{history[idx]["role"]} {history[idx - 1]["role"]}")
+                
+                assistant_message = history[idx]
+                user_message = history[idx - 1]
+                count_tokens += self.count_token(assistant_message["content"]) + self.count_token(user_message["content"])
                 if count_tokens > self.max_tokens * 0.5:  # Rolling history until 50% of the limit
                     break
-                new_history.append(message)
+                new_history.append(assistant_message)
+                new_history.append(user_message)
 
             for message in history[:4][::-1]:
                 new_history.append(message)
