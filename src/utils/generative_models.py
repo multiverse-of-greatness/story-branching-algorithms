@@ -1,6 +1,7 @@
 from src.image_gen.dall_e_three import DallEThree
 from src.image_gen.image_gen_model import ImageGenModel
 from src.image_gen.local_sd import LocalStableDiffusionModel
+from src.image_gen.stable_cascade import StableCascade
 from src.llms.anthropic_model import AnthropicModel
 from src.llms.google_model import GoogleModel
 from src.llms.llm import LLM
@@ -35,5 +36,7 @@ def get_image_generation_model(model_name: str) -> ImageGenModel:
         return DallEThree()
     elif model_name in ['local-sd']:
         return LocalStableDiffusionModel()
+    elif model_name in ["stable-cascade"]:
+        return StableCascade()
     else:
         raise ValueError(f"Unknown image generation model: {model_name}")
