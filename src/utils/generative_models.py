@@ -18,7 +18,7 @@ MAX_TOKENS = {
 
 
 def get_generation_model(model_name: str) -> LLM:
-    if model_name in ["gpt-3.5-turbo-0125", "gpt-4-turbo-preview"]:
+    if model_name in ["gpt-3.5-turbo-0125", "gpt-4-0125-preview"]:
         max_tokens = MAX_TOKENS[model_name]
         return OpenAIModel(model_name, max_tokens)
     elif model_name in ["gemini-1.0-pro"]:
