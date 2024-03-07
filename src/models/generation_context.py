@@ -19,8 +19,9 @@ from src.types.openai import ConversationHistory
 
 
 class GenerationContext:
-    def __init__(self, db_connector: Neo4JConnector, generation_model: LLM, image_generation_model: ImageGenModel,
-                 background_removal_model: BackgroundRemovalModel, approach: str, config: GenerationConfig,
+    def __init__(self, db_connector: Neo4JConnector, generation_model: LLM,
+                 image_generation_model: Optional[ImageGenModel], background_removal_model: BackgroundRemovalModel,
+                 approach: str, config: GenerationConfig,
                  story_id: str = None):
         self.db_connector = db_connector
         self.generation_model = generation_model
@@ -89,7 +90,7 @@ class GenerationContext:
 
     @staticmethod
     def from_json(json_obj: dict, db_connector: Neo4JConnector, generation_model: LLM,
-                  image_generation_model: ImageGenModel,
+                  image_generation_model: Optional[ImageGenModel],
                   background_removal_model: BackgroundRemovalModel) -> 'GenerationContext':
         ctx = GenerationContext(db_connector, generation_model, image_generation_model, background_removal_model,
                                 GenerationConfig.from_json(json_obj['config']), json_obj['approach'],
@@ -111,7 +112,7 @@ class GenerationContext:
         return {
             'db_connector': str(self.db_connector),
             'generation_model': str(self.generation_model),
-            'image_generation_model': str(self.image_gen_model),
+            'image_generation_model': str(self.image_gen_model) if self.config.enable_image_generation else "N/A",
             'background_removal_model': str(self.background_remover_model),
             'approach': self.approach,
             'config': self.config.to_json(),

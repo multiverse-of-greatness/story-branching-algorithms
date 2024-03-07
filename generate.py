@@ -9,8 +9,8 @@ from typing_extensions import Annotated
 
 import src.algorithms.baseline as baseline
 import src.algorithms.proposed as proposed
-from src.bg_remover.bria import Bria
 from src.algorithms.lib.core import initialize_generation
+from src.bg_remover.bria import Bria
 from src.databases.neo4j import Neo4JConnector
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
@@ -72,7 +72,10 @@ def main(
     neo4j_connector = Neo4JConnector()
 
     llm = get_generation_model(os.getenv("GENERATION_MODEL"))
-    image_gen = get_image_generation_model(os.getenv("IMAGE_GENERATION_MODEL"))
+    if config.enable_image_generation:
+        image_gen = get_image_generation_model(os.getenv("IMAGE_GENERATION_MODEL"))
+    else:
+        image_gen = None
     bria = Bria()
 
     generation_context = GenerationContext(neo4j_connector, llm, image_gen, bria, str(approach), config)
