@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -11,17 +10,58 @@ app = typer.Typer()
 
 @app.command()
 def cost_per_story(story_id: str):
-    responses_path = Path("outputs") / story_id / f"{os.getenv('GENERATION_MODEL')}.json"
+    files = list((Path("outputs") / story_id).glob("*.json"))
+    model_name = None
+    responses_path = None
+    for file in files:
+        if file.stem not in ["context", "histories", "plot"]:
+            responses_path = file
+            model_name = file.stem
+            break
+
     plot_path = Path("outputs") / story_id / "plot.json"
+    context_path = Path("outputs") / story_id / "context.json"
     with open(responses_path, "r") as f:
         responses = json.load(f)
     with open(plot_path, "r") as f:
         plot = json.load(f)
+    with open(context_path, "r") as f:
+        context = json.load(f)
+
     prompt_tokens = responses["prompt_tokens"]
     completion_tokens = responses["completion_tokens"]
 
-    prompt_token_price = 0.0005 / 1000
-    completion_token_price = 0.0015 / 1000
+    LLM_PRICES = {
+        'claude-3-opus-20240229': {
+            "prompt": 15 / 10e5,
+            "completion": 75 / 10e5
+        },
+        "claude-3-sonnet-20240229": {
+            "prompt": 3 / 10e5,
+            "completion": 15 / 10e5
+        },
+        "claude-2.1": {
+            "prompt": 8 / 10e5,
+            "completion": 24 / 10e5
+        },
+        'gemini-1.0-pro': {
+            "prompt": 0 / 10e5,
+            "completion": 0 / 10e5
+        },
+        'gpt-3.5-turbo-0125': {
+            "prompt": 0.5 / 10e5,
+            "completion": 1.5 / 10e5
+        },
+        'gpt-4-0125-preview': {
+            "prompt": 10 / 10e5,
+            "completion": 30 / 10e5
+        }
+    }
+
+    print(f"LLM: {model_name}")
+
+    prompt_token_price = LLM_PRICES[model_name]["prompt"]
+    completion_token_price = LLM_PRICES[model_name]["completion"]
 
     print(f"Prompt tokens: {prompt_tokens}")
     print(f"Completion tokens: {completion_tokens}")
@@ -35,8 +75,14 @@ def cost_per_story(story_id: str):
     print(f"Completion cost: ${completion_cost:.2f}")
     print(f"Total cost: ${total_cost:.2f}")
 
-    price_per_character_image = 0.080
-    price_per_scene_image = 0.120
+    if context['image_generation_model'] == "DALL·E 3":
+        price_per_character_image = 0.080
+        price_per_scene_image = 0.120
+    else:
+        price_per_character_image = 0
+        price_per_scene_image = 0
+
+    print(f"Image generation model: {context['image_generation_model']}")
 
     num_characters = len(plot["parsed"]["main_characters"])
     num_scenes = len(plot["parsed"]["main_scenes"])
