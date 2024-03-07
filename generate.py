@@ -7,10 +7,10 @@ from dotenv import load_dotenv
 from loguru import logger
 from typing_extensions import Annotated
 
-import src.baseline as baseline
-import src.proposed as proposed
+import src.algorithms.baseline as baseline
+import src.algorithms.proposed as proposed
 from src.bg_remover.bria import Bria
-from src.core import initialize_generation
+from src.algorithms.lib.core import initialize_generation
 from src.databases.neo4j import Neo4JConnector
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext

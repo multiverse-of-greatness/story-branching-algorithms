@@ -3,13 +3,10 @@ import uuid
 
 from loguru import logger
 
+from src.algorithms.lib.core import get_prompts_by_branching_type
 from src.models.generation_context import GenerationContext
 from src.models.story_chunk import StoryChunk
 from src.models.story_data import StoryData
-from src.prompts.story_prompts import (get_story_until_choices_opportunity_prompt,
-                                       get_story_based_on_selected_choice_prompt,
-                                       get_story_until_chapter_end_prompt,
-                                       get_story_until_game_end_prompt)
 from src.types.algorithm import BranchingType
 from src.utils.openai_ai import append_openai_message
 
@@ -22,26 +19,15 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
         current_chapter, used_choice_opportunity, parent_chunk, choice, state = frontiers.pop(0)
 
         current_num_choices = random.randint(ctx.config.min_num_choices, ctx.config.max_num_choices)
+        history = ctx.get_initial_history() if not parent_chunk else parent_chunk.history
 
-        if state is BranchingType.BRANCHING:
-            if not choice:  # Start of chapter
-                prompt = get_story_until_choices_opportunity_prompt(ctx.config, story_data, current_num_choices,
-                                                                    used_choice_opportunity, current_chapter)
-            else:  # In the middle of chapter
-                prompt = get_story_based_on_selected_choice_prompt(ctx.config, story_data, choice, current_num_choices,
-                                                                   used_choice_opportunity, current_chapter)
-        elif state is BranchingType.CHAPTER_END:
-            prompt = get_story_until_chapter_end_prompt(ctx.config, story_data, parent_chunk)
-        elif state is BranchingType.GAME_END:
-            prompt = get_story_until_game_end_prompt(ctx.config, story_data, parent_chunk)
-        else:
-            logger.error(f"Invalid state: {state}")
-            exit(1)
+        prompt = get_prompts_by_branching_type(choice, ctx, current_chapter, current_num_choices, parent_chunk, state,
+                                               story_data, used_choice_opportunity)
 
         logger.debug(
             f"Current chapter: {current_chapter}, num_opp: {used_choice_opportunity}, state: {state}, choice: {choice}")
 
-        history = append_openai_message(prompt)
+        history = append_openai_message(prompt, history=history)
 
         # Retry chunk generation if failed
         max_retry_attempts = 3
@@ -66,6 +52,8 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
                 f"Story ID: {ctx.story_id}, Chapter: {current_chapter}, Opportunity: {used_choice_opportunity}, State: {state}, Choice: {choice}")
             logger.error("Exiting...")
             exit(1)
+
+        current_chunk.history = append_openai_message(story_chunk_raw, role="assistant", history=history)
 
         if len(current_chunk.story) == 0:
             logger.warning(f"Story chunk {current_chunk.id} has no story narratives.")
@@ -98,7 +86,6 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
                 child_chunks.append((current_chapter + 1, 0, current_chunk, None, BranchingType.BRANCHING))
 
         frontiers.extend(child_chunks)
-        logger.info(f"Data added to frontiers: +{len(child_chunks)}, Total: {len(frontiers)}")
         ctx.set_frontiers(frontiers)
 
     ctx.completed()
