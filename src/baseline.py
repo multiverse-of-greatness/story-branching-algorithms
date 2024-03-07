@@ -103,4 +103,4 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
 
     ctx.completed()
     logger.debug(f"Total number of chunks: {cnt}")
-    logger.debug("End of story generation")
+    logger.debug(f"End of story generation for story ID: {ctx.story_id}")

@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from src.databases.Neo4JConnector import Neo4JConnector
+from src.databases.neo4j import Neo4JConnector
 from src.llms.llm import LLM
 from src.models.generation_config import GenerationConfig
 from .story.story_choice import StoryChoice

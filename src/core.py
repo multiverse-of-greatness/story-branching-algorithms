@@ -24,8 +24,8 @@ def initialize_generation(ctx: GenerationContext):
     else:
         with open(ctx.config.existing_plot, "r") as file:
             content = json.load(file)
-            story_data_obj = content["parsed"]
             story_data_raw = content["raw"]
+            story_data_obj = content["parsed"]
 
     story_data_obj["id"] = ctx.story_id
     story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
@@ -66,7 +66,7 @@ def initialize_generation(ctx: GenerationContext):
 
     with open(ctx.output_path / "plot.json", "w") as file:
         file.write(
-            json.dumps({"raw": story_data_raw, "parsed": story_data_obj}, indent=2)
+            json.dumps({"raw": story_data_raw, "parsed": story_data.to_json()}, indent=2)
         )
 
     return initial_history, story_data

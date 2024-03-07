@@ -11,7 +11,7 @@ import src.baseline as baseline
 import src.proposed as proposed
 from src.bg_remover.bria import Bria
 from src.core import initialize_generation
-from src.databases.Neo4JConnector import Neo4JConnector
+from src.databases.neo4j import Neo4JConnector
 from src.models.generation_config import GenerationConfig
 from src.models.generation_context import GenerationContext
 from src.utils.generative_models import get_generation_model, get_image_generation_model

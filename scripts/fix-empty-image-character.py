@@ -3,7 +3,7 @@ import json
 from dotenv import load_dotenv
 
 from src.bg_remover.bria import Bria
-from src.databases.Neo4JConnector import Neo4JConnector
+from src.databases.neo4j import Neo4JConnector
 from src.utils.general import get_image_from_base64, get_base64_from_image
 
 bria = Bria()
@@ -25,8 +25,6 @@ def fix_empty_image_character(session):
 
 def main():
     neo4j_connector = Neo4JConnector()
-    neo4j_connector.set_database(None)
-
     neo4j_connector.with_session(fix_empty_image_character)
 
 
