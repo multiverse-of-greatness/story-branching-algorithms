@@ -4,6 +4,7 @@ import requests
 from loguru import logger
 
 from src.image_gen.image_gen_model import ImageGenModel
+from src.prompts.image_prompts import get_negative_image_prompt
 from src.types.image_gen import ImageShape
 
 
@@ -31,7 +32,7 @@ class LocalStableDiffusionModel(ImageGenModel):
 
         response = requests.post(self.api_url, json={
             "prompt": prompt,
-            "negative_prompt": "multiple people, poorly Rendered face, poorly drawn face, poor facial details, poorly drawn hands, poorly rendered hands, low resolution, blurry image, oversaturated, bad anatomy, signature, watermark, username, error, missing limbs, error, out of frame, extra fingers, mutated hands, poorly drawn hands, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, username, bad face",
+            "negative_prompt": get_negative_image_prompt(),
             "width": size[shape]["width"],
             "height": size[shape]["height"],
             "steps": 30

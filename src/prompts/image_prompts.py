@@ -2,6 +2,14 @@ from src.models.story.character_data import CharacterData
 from src.models.story.scene_data import SceneData
 
 
+def get_negative_image_prompt() -> str:
+    return ("multiple people, poorly Rendered face, poorly drawn face, poor facial details, poorly drawn hands, "
+            "poorly rendered hands, low resolution, blurry image, oversaturated, bad anatomy, signature, watermark, "
+            "username, error, out of frame, extra fingers, mutated hands, poorly drawn hands, malformed limbs, "
+            "missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, "
+            "long neck, bad face, text, realistic")
+
+
 def get_character_image_prompt(character: CharacterData) -> str:
     prompt_template = (
         "A close-up face portrait image game asset of a 2D character artwork in a classic RPG game on "
