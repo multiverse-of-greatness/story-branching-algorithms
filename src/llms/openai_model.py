@@ -1,5 +1,4 @@
 import copy
-import json
 import os
 from json.decoder import JSONDecodeError
 from time import sleep
@@ -44,26 +43,11 @@ class OpenAIModel(LLM):
             )
 
             response = chat_completion.choices[0].message.content
+            prompt_tokens = chat_completion.usage.prompt_tokens
+            completion_tokens = chat_completion.usage.completion_tokens
 
-            output_path = ctx.output_path / f"{self.model_name}.json"
-            responses = {"responses": [], "prompt_tokens": 0, "completion_tokens": 0}
-
-            if output_path.exists():
-                with open(output_path, "r") as f:
-                    responses = json.load(f)
-
-            responses["responses"].append(response)
-            responses["prompt_tokens"] += chat_completion.usage.prompt_tokens
-            responses["completion_tokens"] += chat_completion.usage.completion_tokens
-
-            with open(output_path, "w") as f:
-                f.write(json.dumps(responses, indent=2))
-
-            with open(ctx.output_path / "histories.json", "r+") as file:
-                histories = json.load(file)
-                histories["histories"].append(copied_messages)
-                file.seek(0)
-                file.write(json.dumps(histories, indent=2))
+            ctx.append_response_to_file(self.model_name, response, prompt_tokens, completion_tokens)
+            ctx.append_history_to_file(copied_messages)
 
             return response, parse_json_string(response)
         except (ValueError, JSONDecodeError) as e:

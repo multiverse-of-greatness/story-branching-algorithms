@@ -1,5 +1,4 @@
 import copy
-import json
 import os
 from json import JSONDecodeError
 from time import sleep
@@ -14,9 +13,9 @@ from src.llms.llm import LLM
 from src.models.generation_context import GenerationContext
 from src.prompts.utility_prompts import get_fix_invalid_json_prompt
 from src.utils.general import parse_json_string
-from ..utils.openai_ai import append_openai_message
 from ..types.openai import ConversationHistory
 from ..utils.google_ai import map_openai_history_to_google_history, map_google_history_to_openai_history
+from ..utils.openai_ai import append_openai_message
 
 
 class GoogleModel(LLM):
@@ -60,30 +59,12 @@ class GoogleModel(LLM):
 
             response = chat_completion.text.strip()
 
-            output_path = ctx.output_path / f"{self.model_name}.json"
-            responses = {"responses": [], "prompt_tokens": 0, "completion_tokens": 0}
-
-            if output_path.exists():
-                with open(output_path, "r") as f:
-                    responses = json.load(f)
-
-            responses["responses"].append(response)
-
             copied_messages = copied_messages + map_openai_history_to_google_history([last_message])
-
             prompt_tokens = self.count_token(self.get_history_message(copied_messages))
-            responses["prompt_tokens"] += prompt_tokens
             response_tokens = self.count_token(response)
-            responses["completion_tokens"] += response_tokens
 
-            with open(output_path, "w") as f:
-                f.write(json.dumps(responses, indent=2))
-
-            with open(ctx.output_path / "histories.json", "r+") as file:
-                histories = json.load(file)
-                histories["histories"].append(map_google_history_to_openai_history(copied_messages))
-                file.seek(0)
-                file.write(json.dumps(histories, indent=2))
+            ctx.append_response_to_file(self.model_name, response, prompt_tokens, response_tokens)
+            ctx.append_history_to_file(map_google_history_to_openai_history(copied_messages))
 
             return response, parse_json_string(response)
         except (ValueError, JSONDecodeError) as e:

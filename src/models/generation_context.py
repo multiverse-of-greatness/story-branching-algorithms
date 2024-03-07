@@ -3,7 +3,9 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Iterable
+
+from anthropic.types import MessageParam
 
 from src.bg_remover.bg_removal_model import BackgroundRemovalModel
 from src.databases.neo4j import Neo4JConnector
@@ -35,6 +37,28 @@ class GenerationContext:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.completed_at: Optional[datetime] = None
+
+    def append_response_to_file(self, model_name: str, response: str, prompt_tokens: int, completion_tokens: int):
+        file_output_path = self.output_path / f"{model_name}.json"
+        responses = {"responses": [], "prompt_tokens": 0, "completion_tokens": 0}
+
+        if file_output_path.exists():
+            with open(file_output_path, "r") as f:
+                responses = json.load(f)
+
+        responses["responses"].append(response)
+        responses["prompt_tokens"] += prompt_tokens
+        responses["completion_tokens"] += completion_tokens
+
+        with open(file_output_path, "w") as f:
+            f.write(json.dumps(responses, indent=2))
+
+    def append_history_to_file(self, history: ConversationHistory | Iterable[MessageParam]):
+        with open(self.output_path / "histories.json", "r+") as file:
+            histories = json.load(file)
+            histories["histories"].append(history)
+            file.seek(0)
+            file.write(json.dumps(histories, indent=2))
 
     def sync_file(self):
         with open(self.output_path / "context.json", "w") as file:
