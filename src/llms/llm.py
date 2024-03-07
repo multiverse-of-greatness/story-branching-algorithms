@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from ..types.openai import ConversationHistory
+from src.types.openai import ConversationHistory
 
 
 class LLM(ABC):
@@ -38,10 +38,11 @@ class LLM(ABC):
                 if history[idx]["role"] != "assistant" or history[idx - 1]["role"] != "user":
                     raise ValueError(f"History is not in the correct conversation format: "
                                      f"{history[idx]["role"]} {history[idx - 1]["role"]}")
-                
+
                 assistant_message = history[idx]
                 user_message = history[idx - 1]
-                count_tokens += self.count_token(assistant_message["content"]) + self.count_token(user_message["content"])
+                count_tokens += self.count_token(assistant_message["content"]) + self.count_token(
+                    user_message["content"])
                 if count_tokens > self.max_tokens * 0.5:  # Rolling history until 50% of the limit
                     break
                 new_history.append(assistant_message)

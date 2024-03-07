@@ -13,7 +13,8 @@ from loguru import logger
 from src.llms.llm import LLM
 from src.models.generation_context import GenerationContext
 from src.prompts.utility_prompts import get_fix_invalid_json_prompt
-from src.utils.general import append_openai_message, parse_json_string
+from src.utils.general import parse_json_string
+from ..utils.openai_ai import append_openai_message
 from ..types.openai import ConversationHistory
 from ..utils.google_ai import map_openai_history_to_google_history, map_google_history_to_openai_history
 

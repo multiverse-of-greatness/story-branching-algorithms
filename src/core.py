@@ -7,7 +7,8 @@ from src.models.generation_context import GenerationContext
 from src.models.story_data import StoryData
 from src.prompts.image_prompts import get_character_image_prompt, get_scene_image_prompt
 from src.prompts.story_prompts import get_plot_prompt
-from src.utils.general import append_openai_message, get_image_from_base64, get_base64_from_image
+from src.utils.general import get_image_from_base64, get_base64_from_image
+from src.utils.openai_ai import append_openai_message
 
 
 def initialize_generation(ctx: GenerationContext):

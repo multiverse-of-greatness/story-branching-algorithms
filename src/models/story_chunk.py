@@ -2,22 +2,22 @@ import json
 
 from neo4j import Session
 
-from ..databases.model import DBModel
-from ..types.openai import ConversationHistory
-from .story.story_choice import StoryChoice
-from .story.story_narrative import StoryNarrative
+from src.databases.model import DBModel
+from src.models.story.story_choice import StoryChoice
+from src.models.story.story_narrative import StoryNarrative
+from src.types.openai import ConversationHistory
 
 
 class StoryChunk(DBModel):
     def __init__(
-        self,
-        id: str,
-        chapter: int,
-        story_so_far: str,
-        story: list[StoryNarrative],
-        choices: list[StoryChoice],
-        story_id: str,
-        num_opportunities: int,
+            self,
+            id: str,
+            chapter: int,
+            story_so_far: str,
+            story: list[StoryNarrative],
+            choices: list[StoryChoice],
+            story_id: str,
+            num_opportunities: int,
     ):
         self.id = id
         self.chapter = chapter
@@ -73,7 +73,7 @@ class StoryChunk(DBModel):
         )
 
     def branched_timeline_to_db(
-        self, session: Session, story_chunk: "StoryChunk", choice: StoryChoice = None
+            self, session: Session, story_chunk: "StoryChunk", choice: StoryChoice = None
     ):
         props = {} if not choice else choice.to_json()
         session.run(

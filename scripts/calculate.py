@@ -1,6 +1,6 @@
-from datetime import datetime
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -74,6 +74,7 @@ def time_to_completion(story_id: str):
         hour, remainder = divmod(time_to_last_update.seconds, 3600)
         minute, second = divmod(remainder, 60)
         print(f"Time to last update: {hour} hours, {minute} minutes, {second} seconds")
+
 
 if __name__ == "__main__":
     load_dotenv()

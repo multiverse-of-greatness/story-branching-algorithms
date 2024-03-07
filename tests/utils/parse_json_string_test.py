@@ -1,6 +1,6 @@
 import unittest
 
-from src.utils import parse_json_string
+from src.utils.general import parse_json_string
 
 
 class TestParseJsonString(unittest.TestCase):

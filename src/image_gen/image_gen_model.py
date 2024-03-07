@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ..types.image_gen import ImageShape
+from src.types.image_gen import ImageShape
 
 
 class ImageGenModel(ABC):

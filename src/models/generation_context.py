@@ -5,15 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from src.bg_remover.bg_removal_model import BackgroundRemovalModel
 from src.databases.neo4j import Neo4JConnector
+from src.image_gen.image_gen_model import ImageGenModel
 from src.llms.llm import LLM
 from src.models.generation_config import GenerationConfig
-from .story.story_choice import StoryChoice
-from .story_chunk import StoryChunk
-from ..bg_remover.bg_removal_model import BackgroundRemovalModel
-from ..image_gen.image_gen_model import ImageGenModel
-from ..types.algorithm import Frontiers, BranchingType
-from ..types.openai import ConversationHistory
+from src.models.story.story_choice import StoryChoice
+from src.models.story_chunk import StoryChunk
+from src.types.algorithm import Frontiers, BranchingType
+from src.types.openai import ConversationHistory
 
 
 class GenerationContext:

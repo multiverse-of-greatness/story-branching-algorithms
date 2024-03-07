@@ -1,6 +1,6 @@
 import unittest
 
-from src.utils import append_openai_message
+from src.utils.openai_ai import append_openai_message
 
 
 class AppendOpenAIMessageTest(unittest.TestCase):

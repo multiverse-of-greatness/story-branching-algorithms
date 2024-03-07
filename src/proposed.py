@@ -10,8 +10,8 @@ from src.prompts.story_prompts import (get_story_until_choices_opportunity_promp
                                        get_story_based_on_selected_choice_prompt,
                                        get_story_until_chapter_end_prompt,
                                        get_story_until_game_end_prompt)
-from src.utils.general import append_openai_message
-from .types.algorithm import BranchingType
+from src.types.algorithm import BranchingType
+from src.utils.openai_ai import append_openai_message
 
 
 def process_generation_queue(ctx: GenerationContext, story_data: StoryData):

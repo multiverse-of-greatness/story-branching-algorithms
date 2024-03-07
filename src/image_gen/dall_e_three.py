@@ -4,7 +4,7 @@ from loguru import logger
 from openai import OpenAI
 
 from src.image_gen.image_gen_model import ImageGenModel
-from ..types.image_gen import ImageShape
+from src.types.image_gen import ImageShape
 
 
 class DallEThree(ImageGenModel):
