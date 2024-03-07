@@ -3,11 +3,11 @@ from src.models.story.scene_data import SceneData
 
 
 def get_character_image_prompt(character: CharacterData) -> str:
-    prompt_template = ("A portrait image of a 2D character artwork in classic RPG game in full-body pose on a "
+    prompt_template = ("A close-up face portrait image game assest of a 2D character artwork in classic RPG game in full-body pose on a "
                        "plain white background. {name} is {gender} {species} who is {age} years old. They are a "
                        "{role} and their background is {background}. They were born in {place_of_birth}. They have "
                        "{physical_appearance}. No text. One image only. Front-facing full body pose. Centered. "
-                       "No drawings. Anime-style asset.")
+                       "No drawings. Anime-style asset. detailed face.")
 
     prompt = prompt_template.format(
         name=character.first_name + " " + character.last_name,
