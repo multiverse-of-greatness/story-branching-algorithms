@@ -19,7 +19,7 @@ app = typer.Typer()
 
 def _run_regenerate_images(session, story_id: str, for_characters: bool, for_scenes: bool):
     img_gen = get_image_generation_model(os.getenv('IMAGE_GENERATION_MODEL'))
-    result = session.run("MATCH (n: StoryData {id: story_id}) RETURN n LIMIT 1", story_id=story_id).data()[0]
+    result = session.run("MATCH (n: StoryData {id: $story_id}) RETURN n LIMIT 1", story_id=story_id).data()[0]
     if for_characters:
         main_characters = json.loads(result.get('n').get('main_characters'))
         for character in main_characters:
