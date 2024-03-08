@@ -14,19 +14,14 @@ def get_character_image_prompt(character: CharacterData) -> str:
     prompt_template = (
         "A close-up face portrait image game asset of a 2D character artwork in a classic RPG game on "
         "a plain white background. {name} is a {gender} {species} who is {age} years old. "
-        "They are a {role} and their background is {background}. "
-        "They were born in {place_of_birth}. They have {physical_appearance}. "
-        "No text. One image only. Front face only. "
-        "Centered. No drawings. Anime-style asset. Detailed face.")
+        "They have {physical_appearance}. No text. One image only. Front face only. Centered. No drawings. "
+        "Anime-style asset. Detailed face.")
 
     prompt = prompt_template.format(
         name=character.first_name + " " + character.last_name,
         species=character.species,
         gender=character.gender,
         age=character.age,
-        role=character.role,
-        background=character.background,
-        place_of_birth=character.place_of_birth,
         physical_appearance=" and ".join(character.physical_appearance)
     )
 
