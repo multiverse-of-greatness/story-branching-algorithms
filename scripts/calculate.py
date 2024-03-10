@@ -10,7 +10,7 @@ app = typer.Typer()
 
 @app.command()
 def cost_per_story(story_id: str):
-    files = list((Path("outputs") / story_id).glob("*.json"))
+    files = list((Path.cwd() / "outputs" / story_id).glob("*.json"))
     model_name = None
     responses_path = None
     for file in files:
@@ -19,8 +19,8 @@ def cost_per_story(story_id: str):
             model_name = file.stem
             break
 
-    plot_path = Path("outputs") / story_id / "plot.json"
-    context_path = Path("outputs") / story_id / "context.json"
+    plot_path = Path.cwd() / "outputs" / story_id / "plot.json"
+    context_path = Path.cwd() / "outputs" / story_id / "context.json"
     with open(responses_path, "r") as f:
         responses = json.load(f)
     with open(plot_path, "r") as f:
@@ -99,7 +99,7 @@ def cost_per_story(story_id: str):
 
 @app.command()
 def time_to_completion(story_id: str):
-    input_path = Path("outputs") / story_id / "context.json"
+    input_path = Path.cwd() / "outputs" / story_id / "context.json"
     with open(input_path, "r") as f:
         context = json.load(f)
     created_at = datetime.fromisoformat(context["created_at"])
