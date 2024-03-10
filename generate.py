@@ -9,7 +9,7 @@ from typing_extensions import Annotated
 
 import src.algorithms.baseline as baseline
 import src.algorithms.proposed as proposed
-from src.algorithms.lib.core import initialize_generation
+from src.algorithms.core.core import initialize_generation
 from src.bg_remover.bria import Bria
 from src.databases.neo4j import Neo4JConnector
 from src.models.generation_config import GenerationConfig
