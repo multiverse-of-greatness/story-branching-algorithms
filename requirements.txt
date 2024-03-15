@@ -1,4 +1,4 @@
-git+https://github.com/kashif/diffusers.git@a3dc21385b7386beb3dab3a9845962ede6765887
+diffusers~=0.27.0
 typer~=0.9.0
 python-dotenv~=1.0.0
 openai~=1.13.3
