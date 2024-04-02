@@ -2,6 +2,7 @@ diffusers~=0.27.0
 typer~=0.9.0
 python-dotenv~=1.0.0
 openai~=1.13.3
+ujson~=5.9.0
 loguru~=0.7.2
 neo4j==5.18.0
 tiktoken==0.6.0

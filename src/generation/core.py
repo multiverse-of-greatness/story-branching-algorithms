@@ -28,9 +28,9 @@ def run_generation_with(config: GenerationConfig, approach: GenerationApproach) 
     initial_history, story_data = initialize_generation(generation_context)
     generation_context.set_initial_history(initial_history)
 
-    if approach == "baseline":
+    if approach is GenerationApproach.BASELINE:
         baseline.process_generation_queue(generation_context, story_data)
-    elif approach == "proposed":
+    elif approach is GenerationApproach.PROPOSED:
         proposed.process_generation_queue(generation_context, story_data)
     else:
         logger.error(f"Invalid approach: {approach}")

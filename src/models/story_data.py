@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from neo4j import Session
 
@@ -9,7 +10,6 @@ from src.models.story.character_data import CharacterData
 from src.models.story.ending_data import EndingData
 from src.models.story.scene_data import SceneData
 from src.models.story_chunk import StoryChunk
-from pathlib import Path
 
 
 class StoryData(DBModel):

@@ -11,11 +11,12 @@ from src.bg_remover.bg_removal_model import BackgroundRemovalModel
 from src.databases.neo4j import Neo4JConnector
 from src.image_gen.image_gen_model import ImageGenModel
 from src.llms.llm import LLM
+from src.models.enums.branching_type import BranchingType
 from src.models.enums.generation_approach import GenerationApproach
 from src.models.generation_config import GenerationConfig
 from src.models.story.story_choice import StoryChoice
 from src.models.story_chunk import StoryChunk
-from src.types.algorithm import BranchingType, Frontiers
+from src.types.algorithm import Frontiers
 from src.types.openai import ConversationHistory
 
 
