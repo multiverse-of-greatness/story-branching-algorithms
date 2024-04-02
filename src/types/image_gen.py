@@ -1,3 +1,3 @@
-from typing import Union
+from typing import Literal
 
-type ImageShape = Union["portrait", "landscape", "square"]
+ImageShape = Literal["portrait", "landscape", "square"]

@@ -42,7 +42,7 @@ class OpenAIModel(LLM):
                 seed=42
             )
 
-            response = chat_completion.choices[0].message.content
+            response = chat_completion.choices[0].message.content.strip()
             prompt_tokens = chat_completion.usage.prompt_tokens
             completion_tokens = chat_completion.usage.completion_tokens
 

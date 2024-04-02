@@ -3,13 +3,19 @@ import os
 
 from loguru import logger
 
+from src.models.enums.branching_type import BranchingType
 from src.models.generation_context import GenerationContext
+from src.models.story.story_choice import StoryChoice
+from src.models.story_chunk import StoryChunk
 from src.models.story_data import StoryData
-from src.prompts.image_prompts import get_character_image_prompt, get_scene_image_prompt
-from src.prompts.story_prompts import get_plot_prompt, get_story_until_choices_opportunity_prompt, \
-    get_story_based_on_selected_choice_prompt, get_story_until_chapter_end_prompt, get_story_until_game_end_prompt
-from src.types.algorithm import BranchingType
-from src.utils.general import get_image_from_base64, get_base64_from_image
+from src.prompts.image_prompts import (get_character_image_prompt,
+                                       get_scene_image_prompt)
+from src.prompts.story_prompts import (
+    get_plot_prompt, get_story_based_on_selected_choice_prompt,
+    get_story_until_chapter_end_prompt,
+    get_story_until_choices_opportunity_prompt,
+    get_story_until_game_end_prompt)
+from src.utils.general import get_base64_from_image, get_image_from_base64
 from src.utils.openai_ai import append_openai_message
 
 
@@ -75,8 +81,8 @@ def initialize_generation(ctx: GenerationContext):
     return initial_history, story_data
 
 
-def get_prompts_by_branching_type(choice, ctx, current_chapter, current_num_choices, parent_chunk, state, story_data,
-                                  used_choice_opportunity):
+def get_prompts_by_branching_type(choice: StoryChoice, ctx: GenerationContext, current_chapter: int, current_num_choices: int,
+                                  parent_chunk: StoryChunk, state: BranchingType, story_data: StoryData, used_choice_opportunity: int) -> str:
     if state is BranchingType.BRANCHING:
         if not choice:  # Start of chapter
             prompt = get_story_until_choices_opportunity_prompt(ctx.config, story_data, current_num_choices,

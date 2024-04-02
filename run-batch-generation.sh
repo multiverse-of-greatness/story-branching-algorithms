@@ -1,6 +1,5 @@
 #!/bin/zsh
-python main.py generate-story-with \
-  --approach proposed \
+python main.py batch-generation \
   --num-chapters 3 \
   --min-num-choices 2 \
   --max-num-choices 3 \
@@ -10,3 +9,4 @@ python main.py generate-story-with \
   --themes "adventure"
   --themes "high-fantasy"
   --themes "science fiction"
+  --n-stories 50

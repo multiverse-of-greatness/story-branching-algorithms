@@ -3,17 +3,19 @@ import json
 from neo4j import Session
 
 from src.databases.model import DBModel
+from src.models.enums.generation_approach import GenerationApproach
 from src.models.story.chapter_synopsis import ChapterSynopsis
 from src.models.story.character_data import CharacterData
 from src.models.story.ending_data import EndingData
 from src.models.story.scene_data import SceneData
 from src.models.story_chunk import StoryChunk
+from pathlib import Path
 
 
 class StoryData(DBModel):
     def __init__(self, id: str, title: str, genre: str, themes: list[str], main_scenes: list[SceneData],
                  main_characters: list[CharacterData], synopsis: str, chapter_synopses: list[ChapterSynopsis],
-                 beginning: str, endings: list[EndingData], generated_by: str, approach: str):
+                 beginning: str, endings: list[EndingData], generated_by: str, approach: GenerationApproach):
         self.id = id
         self.title = title
         self.genre = genre
@@ -27,6 +29,10 @@ class StoryData(DBModel):
         self.generated_by = generated_by
         self.approach = approach
 
+    @property
+    def existing_plot_path(self) -> Path:
+        return Path("outputs") / self.approach.value / self.id / "plot.json"
+
     @staticmethod
     def from_json(json_obj: dict):
         return StoryData(json_obj['id'], json_obj['title'], json_obj['genre'], json_obj['themes'],
@@ -35,7 +41,7 @@ class StoryData(DBModel):
                          json_obj['synopsis'], [ChapterSynopsis.from_json(chapter_synopsis) for chapter_synopsis in
                                                 json_obj['chapter_synopses']], json_obj['beginning'],
                          [EndingData.from_json(ending) for ending in json_obj['endings']], json_obj['generated_by'],
-                         json_obj['approach'])
+                         GenerationApproach(json_obj['approach']))
 
     def to_json(self) -> dict:
         return {
@@ -50,7 +56,7 @@ class StoryData(DBModel):
             'beginning': self.beginning,
             'endings': [ending.to_json() for ending in self.endings],
             'generated_by': self.generated_by,
-            'approach': self.approach
+            'approach': self.approach.value
         }
 
     def __str__(self):
@@ -71,7 +77,7 @@ class StoryData(DBModel):
             main_characters=json.dumps([c.to_json() for c in self.main_characters]), synopsis=self.synopsis,
             chapter_synopses=json.dumps([c.to_json() for c in self.chapter_synopses]), beginning=self.beginning,
             endings=json.dumps([e.to_json() for e in self.endings]), generated_by=self.generated_by,
-            approach=self.approach
+            approach=self.approach.value
         )
 
     def add_story_chunk_to_db(self, session: Session, story_chunk: StoryChunk):

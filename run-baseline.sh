@@ -1,5 +1,5 @@
 #!/bin/zsh
-python generate.py \
+python main.py generate-story-with \
   --approach baseline \
   --num-chapters 3 \
   --min-num-choices 2 \

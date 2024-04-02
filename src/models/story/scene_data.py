@@ -28,7 +28,7 @@ class SceneData(DBModel):
     def __str__(self):
         return (
             f'SceneData(id={self.id}, title={self.title}, location={self.location}, description={self.description}, '
-            f'image={self.image})')
+            f'image={bool(self.image)})')
 
     def save_to_db(self, session: Session):
         session.run('CREATE (sceneData:SceneData $props)', props=self.to_json())

@@ -53,8 +53,8 @@ class CharacterData(DBModel):
         return (f"CharacterData(id={self.id}, first_name={self.first_name}, last_name={self.last_name}, "
                 f"species={self.species}, age={self.age}, gender={self.gender}, role={self.role}, "
                 f"background={self.background}, place_of_birth={self.place_of_birth}, "
-                f"physical_appearance={self.physical_appearance}, image={self.image}, "
-                f"original_image={self.original_image})")
+                f"physical_appearance={self.physical_appearance}, image={bool(self.image)}, "
+                f"original_image={bool(self.original_image)})")
 
     def save_to_db(self, session: Session):
         session.run('CREATE (characterData:CharacterData $props)', props=self.to_json())

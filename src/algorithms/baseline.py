@@ -3,7 +3,7 @@ import uuid
 
 from loguru import logger
 
-from src.algorithms.core.core import get_prompts_by_branching_type
+from src.algorithms.core import get_prompts_by_branching_type
 from src.models.generation_context import GenerationContext
 from src.models.story_chunk import StoryChunk
 from src.models.story_data import StoryData

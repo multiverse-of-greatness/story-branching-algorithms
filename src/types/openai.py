@@ -1,8 +1,9 @@
-from typing import Union
+from typing import Literal
 
-from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionAssistantMessageParam, \
-    ChatCompletionUserMessageParam
+from openai.types.chat import (ChatCompletionAssistantMessageParam,
+                               ChatCompletionSystemMessageParam,
+                               ChatCompletionUserMessageParam)
 
-type OpenAIRole = Union["user", "assistant", "system"]
-type ConversationHistory = list[ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam |
+OpenAIRole = Literal["user", "assistant", "system"]
+ConversationHistory = list[ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam |
                                 ChatCompletionAssistantMessageParam]

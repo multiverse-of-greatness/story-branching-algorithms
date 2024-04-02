@@ -1,13 +1,23 @@
 import os
 from typing import Callable
 
+from loguru import logger
 from neo4j import GraphDatabase
 
 from src.databases.model import DBModel
 
 
 class Neo4JConnector:
-    def __init__(self):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Neo4JConnector, cls).__new__(cls)
+            cls._instance.initialize()
+            logger.info(f"Neo4JConnector initialized: {cls._instance}")
+        return cls._instance
+
+    def initialize(self):
         self.uri = os.getenv("NEO4J_URI")
         username, password = os.getenv("NEO4J_AUTH").split("/")
         self.driver = GraphDatabase.driver(self.uri, auth=(username, password))

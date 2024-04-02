@@ -7,12 +7,6 @@ from loguru import logger
 from src.models.story_data import StoryData
 
 
-def valida_approach(approach: str):
-    if approach not in ["proposed", "baseline"]:
-        logger.error("Approach must be either 'proposed' or 'baseline'")
-        raise typer.Abort()
-
-
 def validate_existing_plot(existing_plot_path: str):
     if existing_plot_path and not Path(existing_plot_path).exists():
         logger.error(f"Existing plot file not found: {existing_plot_path}")
