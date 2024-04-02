@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   story-branching:
-    image: neo4j:5.17.0-community
+    image: neo4j:5.18.0-community
     container_name: story-branching
     ports:
       - "7474:7474"

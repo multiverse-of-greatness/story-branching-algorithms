@@ -1,7 +1,6 @@
 import json
 
 from neo4j import Session
-
 from src.databases.model import DBModel
 from src.models.story.story_choice import StoryChoice
 from src.models.story.story_narrative import StoryNarrative
@@ -75,11 +74,10 @@ class StoryChunk(DBModel):
     def branched_timeline_to_db(
             self, session: Session, story_chunk: "StoryChunk", choice: StoryChoice = None
     ):
-        props = {} if not choice else choice.to_json()
         session.run(
             """MATCH (source:StoryChunk {id: $source_id}), (branched:StoryChunk {id: $branched_id})
-            CREATE (source)-[:BRANCHED_TO $props]->(branched)""",
+            CREATE (source)-[:BRANCHED_TO {choice: $choice}]->(branched)""",
             source_id=self.id,
             branched_id=story_chunk.id,
-            props=props,
+            choice = '{}' if choice is None else json.dumps(choice.to_json()),
         )

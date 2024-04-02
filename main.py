@@ -117,11 +117,11 @@ def batch_generation(
     logger.info(f"Generating {n_stories} stories with proposed approach")
     proposed_stories = run_batch_generation(config, n_stories, GenerationApproach.PROPOSED)
     logger.info(f"Generating {n_stories} stories with baseline approach with existing plot")
-    _ = run_batch_generation_with_existing_plot(proposed_stories, GenerationApproach.BASELINE)
+    _ = run_batch_generation_with_existing_plot(config, proposed_stories, GenerationApproach.BASELINE)
     logger.info(f"Generating {n_stories} stories with baseline approach")
-    baseline_stories = run_batch_generation(n_stories, GenerationApproach.BASELINE)
+    baseline_stories = run_batch_generation(config, n_stories, GenerationApproach.BASELINE)
     logger.info(f"Generating {n_stories} stories with proposed approach with existing plot")
-    _ = run_batch_generation_with_existing_plot(baseline_stories, GenerationApproach.PROPOSED)
+    _ = run_batch_generation_with_existing_plot(config, baseline_stories, GenerationApproach.PROPOSED)
 
 
 if __name__ == "__main__":
