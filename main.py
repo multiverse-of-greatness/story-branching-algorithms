@@ -111,7 +111,10 @@ def batch_generation(
         ] = 50,
         seed: Annotated[
             Optional[int], typer.Option(help="Seed for random generation"),
-        ] = None):
+        ] = None,
+        is_proposed_first: Annotated[
+            Optional[bool], typer.Option(help="Whether to run proposed approach first"),
+        ] = True):
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
 
@@ -120,14 +123,16 @@ def batch_generation(
                               num_main_characters, num_main_scenes, enable_image_generation, None, seed)
     logger.info(f"Generation config: {config}")
 
-    logger.info(f"Generating {n_stories} stories with proposed approach")
-    proposed_stories = run_batch_generation(config, n_stories, GenerationApproach.PROPOSED)
-    logger.info(f"Generating {n_stories} stories with baseline approach with existing plot")
-    _ = run_batch_generation_with_existing_plot(config, proposed_stories, GenerationApproach.BASELINE)
-    logger.info(f"Generating {n_stories} stories with baseline approach")
-    baseline_stories = run_batch_generation(config, n_stories, GenerationApproach.BASELINE)
-    logger.info(f"Generating {n_stories} stories with proposed approach with existing plot")
-    _ = run_batch_generation_with_existing_plot(config, baseline_stories, GenerationApproach.PROPOSED)
+    if is_proposed_first:
+        logger.info(f"Generating {n_stories} stories with proposed approach")
+        proposed_stories = run_batch_generation(config, n_stories, GenerationApproach.PROPOSED)
+        logger.info(f"Generating {n_stories} stories with baseline approach with existing plot")
+        _ = run_batch_generation_with_existing_plot(config, proposed_stories, GenerationApproach.BASELINE)
+    else:
+        logger.info(f"Generating {n_stories} stories with baseline approach")
+        baseline_stories = run_batch_generation(config, n_stories, GenerationApproach.BASELINE)
+        logger.info(f"Generating {n_stories} stories with proposed approach with existing plot")
+        _ = run_batch_generation_with_existing_plot(config, baseline_stories, GenerationApproach.PROPOSED)
 
 
 if __name__ == "__main__":
