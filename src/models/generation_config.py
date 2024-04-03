@@ -48,6 +48,24 @@ class GenerationConfig:
             'existing_plot': self.existing_plot,
             'seed': self.seed
         }
+    
+    @staticmethod
+    def copy_from(config: 'GenerationConfig'):
+        return GenerationConfig(
+            min_num_choices=config.min_num_choices,
+            max_num_choices=config.max_num_choices,
+            min_num_choices_opportunity=config.min_num_choices_opportunity,
+            max_num_choices_opportunity=config.max_num_choices_opportunity,
+            game_genre=config.game_genre,
+            themes=config.themes,
+            num_chapters=config.num_chapters,
+            num_endings=config.num_endings,
+            num_main_characters=config.num_main_characters,
+            num_main_scenes=config.num_main_scenes,
+            enable_image_generation=config.enable_image_generation,
+            existing_plot=config.existing_plot,
+            seed=config.seed
+        )
 
     def __str__(self):
         return (f"GenerationConfig(min_num_choices={self.min_num_choices}, "
