@@ -17,7 +17,7 @@ from src.utils.generative_models import (get_generation_model,
 
 def run_generation_with(config: GenerationConfig, approach: GenerationApproach) -> StoryData:
     neo4j_connector = Neo4JConnector()
-    llm = get_generation_model(os.getenv("GENERATION_MODEL"))
+    llm = get_generation_model(os.getenv("GENERATION_MODEL"), config.seed)
     image_gen = None
     bria = Bria()
     if config.enable_image_generation:

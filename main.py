@@ -56,14 +56,17 @@ def generate_story_with(
         enable_image_generation: Annotated[
             Optional[bool], typer.Option(help="Enable image generation"),
         ] = False,
+        seed: Annotated[
+            Optional[int], typer.Option(help="Seed for random generation"),
+        ] = None
 ):
     validate_existing_plot(existing_plot)
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
-    
+
     config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
                               max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, enable_image_generation, existing_plot)
+                              num_main_characters, num_main_scenes, enable_image_generation, existing_plot, seed)
     logger.info(f"Generation config: {config}")
     run_generation_with(config, approach)
 
@@ -105,13 +108,16 @@ def batch_generation(
         ] = False,
         n_stories: Annotated[
             Optional[int], typer.Option(help="Number of stories to be generated")
-        ] = 50):
+        ] = 50,
+        seed: Annotated[
+            Optional[int], typer.Option(help="Seed for random generation"),
+        ] = None):
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
-    
+
     config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
                               max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, enable_image_generation)
+                              num_main_characters, num_main_scenes, enable_image_generation, None, seed)
     logger.info(f"Generation config: {config}")
 
     logger.info(f"Generating {n_stories} stories with proposed approach")

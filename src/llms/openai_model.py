@@ -7,6 +7,7 @@ from loguru import logger
 from openai import (APIConnectionError, APIError, APITimeoutError, OpenAI,
                     RateLimitError)
 from tiktoken import encoding_for_model
+from typing_extensions import Optional
 
 from src.llms.llm import LLM
 from src.models.generation_context import GenerationContext
@@ -17,10 +18,11 @@ from src.utils.openai_ai import append_openai_message
 
 
 class OpenAIModel(LLM):
-    def __init__(self, model_name: str, max_tokens: int = 16385):
+    def __init__(self, model_name: str, max_tokens: int = 16385, seed: Optional[int] = None):
         super().__init__(max_tokens)
         self.model_name = model_name
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60)
+        self.seed = seed if seed is not None else 42
 
     @staticmethod
     def count_token(message: str) -> int:
@@ -39,7 +41,7 @@ class OpenAIModel(LLM):
                 model=self.model_name,
                 messages=copied_messages,
                 response_format={"type": "json_object"},
-                seed=42
+                seed=self.seed
             )
 
             response = chat_completion.choices[0].message.content.strip()

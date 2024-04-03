@@ -1,3 +1,6 @@
+from loguru import logger
+from typing_extensions import Optional
+
 from src.image_gen.dall_e_three import DallEThree
 from src.image_gen.image_gen_model import ImageGenModel
 from src.image_gen.local_sd import LocalStableDiffusionModel
@@ -17,14 +20,18 @@ MAX_TOKENS = {
 }
 
 
-def get_generation_model(model_name: str) -> LLM:
+def get_generation_model(model_name: str, seed: Optional[int]) -> LLM:
     if model_name in ["gpt-3.5-turbo-0125", "gpt-4-0125-preview"]:
         max_tokens = MAX_TOKENS[model_name]
-        return OpenAIModel(model_name, max_tokens)
+        return OpenAIModel(model_name, max_tokens, seed)
     elif model_name in ["gemini-1.0-pro"]:
+        if seed is not None:
+            logger.warning(f"Seed is set for model {model_name}, but it will be ignored.")
         max_tokens = MAX_TOKENS[model_name]
         return GoogleModel(model_name, max_tokens)
     elif model_name in ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-2.1"]:
+        if seed is not None:
+            logger.warning(f"Seed is set for model {model_name}, but it will be ignored.")
         max_tokens = MAX_TOKENS[model_name]
         return AnthropicModel(model_name, max_tokens)
     else:
