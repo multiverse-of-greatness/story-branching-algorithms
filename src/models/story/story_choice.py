@@ -1,27 +1,29 @@
-from neo4j import Session
-
-from src.databases.model import DBModel
+from dataclasses import dataclass
 
 
-class StoryChoice(DBModel):
-    def __init__(self, id: int, choice: str, description: str):
-        self.id = id
-        self.choice = choice
-        self.description = description
+@dataclass
+class StoryChoice:
+    id: int
+    choice: str
+    description: str
 
-    @staticmethod
-    def from_json(json_obj: dict):
-        return StoryChoice(json_obj['id'], json_obj['choice'], json_obj['description'])
-
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             'id': self.id,
             'choice': self.choice,
             'description': self.description
         }
 
+    @classmethod
+    def from_dict(cls, data_obj: dict):
+        return cls(
+            id=data_obj.get("id"),
+            choice=data_obj.get("choice"),
+            description=data_obj.get("description")
+        )
+
     def __str__(self):
         return f'StoryChoice(id={self.id}, choice={self.choice}, description={self.description})'
-
-    def save_to_db(self, session: Session):
-        session.run('CREATE (storyChoice:StoryChoice $props)', props=self.to_json())
+    
+    def __repr__(self):
+        return str(self)

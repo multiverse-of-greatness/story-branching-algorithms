@@ -1,21 +1,14 @@
-from neo4j import Session
-
-from src.databases.model import DBModel
+from dataclasses import dataclass
 
 
-class ChapterSynopsis(DBModel):
-    def __init__(self, chapter: int, synopsis: str, character_ids: list[int], scene_ids: list[int]):
-        self.chapter = chapter
-        self.synopsis = synopsis
-        self.character_ids = character_ids
-        self.scene_ids = scene_ids
+@dataclass
+class ChapterSynopsis:
+    chapter: int
+    synopsis: str
+    character_ids: list[int]
+    scene_ids: list[int]
 
-    @staticmethod
-    def from_json(json_obj: dict):
-        return ChapterSynopsis(json_obj['chapter'], json_obj['synopsis'], json_obj['character_ids'],
-                               json_obj['scene_ids'])
-
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             'chapter': self.chapter,
             'synopsis': self.synopsis,
@@ -23,9 +16,18 @@ class ChapterSynopsis(DBModel):
             'scene_ids': self.scene_ids
         }
 
+    @classmethod
+    def from_dict(cls, data_obj: dict):
+        return cls(
+            chapter=data_obj.get("chapter"),
+            synopsis=data_obj.get("synopsis"),
+            character_ids=data_obj.get("character_ids"),
+            scene_ids=data_obj.get("scene_ids")
+        )
+
     def __str__(self):
         return (f"ChapterSynopsis(chapter={self.chapter}, synopsis={self.synopsis}, "
                 f"character_ids={self.character_ids}, scene_ids={self.scene_ids})")
-
-    def save_to_db(self, session: Session):
-        session.run('CREATE (chapterSynopsis:ChapterSynopsis $props)', props=self.to_json())
+    
+    def __repr__(self):
+        return str(self)

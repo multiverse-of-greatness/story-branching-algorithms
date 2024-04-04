@@ -8,23 +8,24 @@ import ujson
 from anthropic.types import MessageParam
 
 from src.bg_remover.bg_removal_model import BackgroundRemovalModel
-from src.databases.neo4j import Neo4JConnector
 from src.image_gen.image_gen_model import ImageGenModel
 from src.llms.llm import LLM
 from src.models.enums.branching_type import BranchingType
 from src.models.enums.generation_approach import GenerationApproach
+from src.models.frontier_item import FrontierItem
 from src.models.generation_config import GenerationConfig
 from src.models.story.story_choice import StoryChoice
 from src.models.story_chunk import StoryChunk
+from src.repository import CommonRepository
 from src.types.algorithm import Frontiers
 from src.types.openai import ConversationHistory
 
 
 class GenerationContext:
-    def __init__(self, db_connector: Neo4JConnector, generation_model: LLM,
+    def __init__(self, repository: CommonRepository, generation_model: LLM,
                  image_generation_model: Optional[ImageGenModel], background_removal_model: BackgroundRemovalModel,
                  approach: GenerationApproach, config: GenerationConfig, story_id: str = None):
-        self.db_connector = db_connector
+        self.repository = repository
         self.generation_model = generation_model
         self.image_gen_model = image_generation_model
         self.background_remover_model = background_removal_model
@@ -35,7 +36,7 @@ class GenerationContext:
         self.output_path = Path("outputs") / self.approach.value / self.story_id
         self.output_path.mkdir(exist_ok=True, parents=True)
         self._initial_history: Optional[ConversationHistory] = None
-        self._frontiers: Frontiers = [(1, 0, None, None, BranchingType.BRANCHING)]
+        self._frontiers: Frontiers = [FrontierItem(1, 0, None, None, BranchingType.BRANCHING)]
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.completed_at: Optional[datetime] = None
@@ -64,7 +65,7 @@ class GenerationContext:
 
     def sync_file(self):
         with open(self.output_path / "context.json", "w") as file:
-            file.write(ujson.dumps(self.to_json(), indent=2))
+            file.write(ujson.dumps(self.to_dict(), indent=2))
 
     def get_initial_history(self):
         return self._initial_history
@@ -90,28 +91,23 @@ class GenerationContext:
         self.sync_file()
 
     @staticmethod
-    def from_json(json_obj: dict, db_connector: Neo4JConnector, generation_model: LLM,
+    def from_dict(data_obj: dict, repository: CommonRepository, generation_model: LLM,
                   image_generation_model: Optional[ImageGenModel],
                   background_removal_model: BackgroundRemovalModel) -> 'GenerationContext':
-        ctx = GenerationContext(db_connector, generation_model, image_generation_model, background_removal_model,
-                                GenerationConfig.from_json(json_obj['config']), GenerationApproach(json_obj['approach']),
-                                json_obj['story_id'])
-        ctx.is_generation_completed = json_obj['is_generation_completed']
-        ctx.created_at = datetime.fromisoformat(json_obj['created_at'])
-        ctx.updated_at = datetime.fromisoformat(json_obj['updated_at'])
-        ctx.completed_at = datetime.fromisoformat(json_obj['completed_at']) if not json_obj.get(
-            'completed_at') else None
-        ctx._initial_history = json_obj['initial_history']
-        ctx._frontiers = list(
-            map(lambda x: (
-                x[0], x[1], None if x[2] is None else StoryChunk.from_json(x[2]),
-                None if x[3] is None else StoryChoice.from_json(x[3]), BranchingType(x[4])),
-                json_obj['frontiers']))
+        ctx = GenerationContext(repository, generation_model, image_generation_model, background_removal_model,
+                                GenerationConfig.from_json(data_obj['config']), GenerationApproach(data_obj['approach']),
+                                data_obj['story_id'])
+        ctx.is_generation_completed = data_obj['is_generation_completed']
+        ctx.created_at = datetime.fromisoformat(data_obj['created_at'])
+        ctx.updated_at = datetime.fromisoformat(data_obj['updated_at'])
+        ctx.completed_at = datetime.fromisoformat(data_obj['completed_at']) if not data_obj.get('completed_at') else None
+        ctx._initial_history = data_obj['initial_history']
+        ctx._frontiers = []
         return ctx
 
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {
-            'db_connector': str(self.db_connector),
+            'repository': str(self.repository),
             'generation_model': str(self.generation_model),
             'image_generation_model': str(self.image_gen_model) if self.config.enable_image_generation else "N/A",
             'background_removal_model': str(self.background_remover_model),
@@ -121,16 +117,14 @@ class GenerationContext:
             'is_generation_completed': self.is_generation_completed,
             'output_path': str(self.output_path),
             'initial_history': self._initial_history,
-            'frontiers': list(map(lambda x: (
-                x[0], x[1], None if x[2] is None else x[2].to_json(), None if x[3] is None else x[3].to_json(), x[4].value),
-                self._frontiers)),
+            'frontiers': [item.to_dict() for item in self._frontiers],
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
 
     def __str__(self):
-        return (f"GenerationContext(db_connector={self.db_connector}, generation_model={self.generation_model}, "
+        return (f"GenerationContext(repository={self.repository}, generation_model={self.generation_model}, "
                 f"image_generation_model={self.image_gen_model}, "
                 f"background_removal_model={self.background_remover_model}, approach={self.approach}, "
                 f"config={self.config}, story_id={self.story_id}, output_path={self.output_path}, "

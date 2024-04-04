@@ -5,23 +5,26 @@ from time import sleep
 
 import google.generativeai as genai
 from google.ai.generativelanguage_v1beta import Content
-from google.api_core.exceptions import ServiceUnavailable, InternalServerError, TooManyRequests, DeadlineExceeded
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from google.api_core.exceptions import (DeadlineExceeded, InternalServerError,
+                                        ServiceUnavailable, TooManyRequests)
+from google.generativeai.types import HarmBlockThreshold, HarmCategory
 from loguru import logger
 
 from src.llms.llm import LLM
 from src.models.generation_context import GenerationContext
 from src.prompts.utility_prompts import get_fix_invalid_json_prompt
 from src.utils.general import parse_json_string
+
 from ..types.openai import ConversationHistory
-from ..utils.google_ai import map_openai_history_to_google_history, map_google_history_to_openai_history
+from ..utils.google_ai import (map_google_history_to_openai_history,
+                               map_openai_history_to_google_history)
 from ..utils.openai_ai import append_openai_message
 
 
 class GoogleModel(LLM):
     def __init__(self, model_name: str, max_tokens: int = 32768):
         super().__init__(max_tokens)
-        genai.configure(api_key=os.environ["GOOGLE_AI_API_KEY"])
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model_name = model_name
         self.client = genai.GenerativeModel(self.model_name)
 

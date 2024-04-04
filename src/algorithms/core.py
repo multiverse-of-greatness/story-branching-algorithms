@@ -39,7 +39,7 @@ def initialize_generation(ctx: GenerationContext):
     story_data_obj["id"] = ctx.story_id
     story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
     story_data_obj["approach"] = ctx.approach
-    story_data = StoryData.from_json(story_data_obj)
+    story_data = StoryData.from_dict(story_data_obj)
 
     if ctx.config.enable_image_generation and not ctx.config.existing_plot:
         logger.debug("Start character image generation")
@@ -68,14 +68,14 @@ def initialize_generation(ctx: GenerationContext):
     else:
         logger.debug("Image generation is disabled")
 
-    ctx.db_connector.write(story_data)
+    ctx.repository.create_story_data(story_data)
 
     initial_history = append_openai_message(story_data_raw, role="assistant", history=history)
     logger.debug("End story plot generation")
 
     with open(ctx.output_path / "plot.json", "w") as file:
         file.write(
-            json.dumps({"raw": story_data_raw, "parsed": story_data.to_json()}, indent=2)
+            json.dumps({"raw": story_data_raw, "parsed": story_data.to_dict()}, indent=2)
         )
 
     return initial_history, story_data

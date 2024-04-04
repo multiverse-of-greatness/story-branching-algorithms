@@ -1,39 +1,23 @@
-from neo4j import Session
+from dataclasses import dataclass
+from typing import Optional
 
-from src.databases.model import DBModel
 
+@dataclass
+class CharacterData:
+    id: int
+    first_name: str
+    last_name: str
+    species: str
+    age: str
+    gender: str
+    role: str
+    background: str
+    place_of_birth: str
+    physical_appearance: list[str]
+    image: Optional[str] = None
+    original_image: Optional[str] = None
 
-class CharacterData(DBModel):
-    def __init__(self, id: int, first_name: str, last_name: str, species: str, age: str, gender: str, role: str,
-                 background: str, place_of_birth: str, physical_appearance: list[str], image: str = None,
-                 original_image: str = None):
-        self.id = id
-        self.first_name = first_name
-        self.last_name = last_name
-        self.species = species
-        self.age = age
-        self.gender = gender
-        self.role = role
-        self.background = background
-        self.place_of_birth = place_of_birth
-        self.physical_appearance = physical_appearance
-        self.image = image
-        self.original_image = original_image
-
-    def set_image(self, image: str):
-        self.image = image
-
-    def set_original_image(self, original_image: str):
-        self.original_image = original_image
-
-    @staticmethod
-    def from_json(json_obj: dict):
-        return CharacterData(json_obj['id'], json_obj['first_name'], json_obj['last_name'], json_obj['species'],
-                             json_obj['age'], json_obj['gender'], json_obj['role'], json_obj['background'],
-                             json_obj['place_of_birth'], json_obj['physical_appearance'], json_obj.get('image'),
-                             json_obj.get('original_image'))
-
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             'id': self.id,
             'first_name': self.first_name,
@@ -49,12 +33,29 @@ class CharacterData(DBModel):
             'original_image': self.original_image
         }
 
+    @classmethod
+    def from_dict(cls, data_obj: dict):
+        return cls(
+            id=data_obj.get("id"),
+            first_name=data_obj.get("first_name"),
+            last_name=data_obj.get("last_name"),
+            species=data_obj.get("species"),
+            age=data_obj.get("age"),
+            gender=data_obj.get("gender"),
+            role=data_obj.get("role"),
+            background=data_obj.get("background"),
+            place_of_birth=data_obj.get("place_of_birth"),
+            physical_appearance=data_obj.get("physical_appearance"),
+            image=data_obj.get("image"),
+            original_image=data_obj.get("original_image")
+        )
+
     def __str__(self):
         return (f"CharacterData(id={self.id}, first_name={self.first_name}, last_name={self.last_name}, "
                 f"species={self.species}, age={self.age}, gender={self.gender}, role={self.role}, "
                 f"background={self.background}, place_of_birth={self.place_of_birth}, "
                 f"physical_appearance={self.physical_appearance}, image={bool(self.image)}, "
                 f"original_image={bool(self.original_image)})")
-
-    def save_to_db(self, session: Session):
-        session.run('CREATE (characterData:CharacterData $props)', props=self.to_json())
+    
+    def __repr__(self):
+        return str(self)
