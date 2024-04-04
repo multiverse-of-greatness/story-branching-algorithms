@@ -27,7 +27,7 @@ class CommonRepository:
                  "MERGE (source)-[:BRANCHED_TO {choice: $choice}]->(branched)"),
                 source_id=branch.source_chunk_id,
                 branched_id=branch.target_chunk_id,
-                choice='{}' if branch.choice is None else ujson.dumps(branch.choice.to_dict()),
+                choice='{}' if branch.choice is None else branch.choice.model_dump_json(),
             )
         logger.info(f"Created branch from {branch.source_chunk_id} to {branch.target_chunk_id}")
 
@@ -39,7 +39,7 @@ class CommonRepository:
                 id=story_chunk.id,
                 chapter=story_chunk.chapter,
                 story_so_far=story_chunk.story_so_far,
-                story=ujson.dumps([n.to_dict() for n in story_chunk.story]),
+                story=ujson.dumps([n.model_dump() for n in story_chunk.story]),
                 history=story_chunk.history,
                 story_id=story_chunk.story_id,
                 num_opportunities=story_chunk.num_opportunities,
@@ -54,10 +54,10 @@ class CommonRepository:
                  "synopsis: $synopsis, chapter_synopses: $chapter_synopses, "
                  "beginning: $beginning, endings: $endings, generated_by: $generated_by, approach: $approach})"),
                 id=story_data.id, title=story_data.title, genre=story_data.genre, themes=story_data.themes,
-                main_scenes=ujson.dumps([s.to_dict() for s in story_data.main_scenes]),
-                main_characters=ujson.dumps([c.to_dict() for c in story_data.main_characters]), synopsis=story_data.synopsis,
-                chapter_synopses=ujson.dumps([c.to_dict() for c in story_data.chapter_synopses]), beginning=story_data.beginning,
-                endings=ujson.dumps([e.to_dict() for e in story_data.endings]), generated_by=story_data.generated_by,
+                main_scenes=ujson.dumps([s.model_dump() for s in story_data.main_scenes]),
+                main_characters=ujson.dumps([c.model_dump() for c in story_data.main_characters]), synopsis=story_data.synopsis,
+                chapter_synopses=ujson.dumps([c.model_dump() for c in story_data.chapter_synopses]), beginning=story_data.beginning,
+                endings=ujson.dumps([e.model_dump() for e in story_data.endings]), generated_by=story_data.generated_by,
                 approach=story_data.approach.value
             )
         logger.info(f"StoryData {story_data.id} created")

@@ -24,13 +24,13 @@ def map_google_role_to_openai_role(role: str) -> OpenAIRole:
 def map_openai_history_to_google_history(history: ConversationHistory) -> list[Content]:
     converted_history: list[Content] = []
     for message in history:
-        if message.get("role") == "system":
+        if message["role"] == "system":
             continue
         content = Content()
         part = Part()
-        part.text = message.get("content")
+        part.text = message["content"]
         content.parts = [part]
-        content.role = map_openai_role_to_google_role(message.get("role"))
+        content.role = map_openai_role_to_google_role(message["role"])
         converted_history.append(content)
 
     return converted_history

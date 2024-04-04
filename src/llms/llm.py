@@ -8,7 +8,8 @@ from src.types.openai import ConversationHistory
 
 
 class LLM(ABC):
-    def __init__(self, max_tokens: int):
+    def __init__(self, model_name: str, max_tokens: int):
+        self.model_name = model_name
         self.max_tokens = max_tokens
 
     @staticmethod

@@ -1,6 +1,6 @@
-import json
 import os
 
+import ujson
 from loguru import logger
 
 from src.models.enums.branching_type import BranchingType
@@ -26,20 +26,38 @@ def initialize_generation(ctx: GenerationContext):
     history = append_openai_message(game_story_prompt)
 
     with open(ctx.output_path / "histories.json", "w") as file:
-        file.write(json.dumps({"histories": [history]}, indent=2))
+        file.write(ujson.dumps({"histories": [history]}, indent=2))
+
+    story_data_raw, story_data_obj, story_data = None, None, None
 
     if not ctx.config.existing_plot:
-        story_data_raw, story_data_obj = ctx.generation_model.generate_content(ctx, history)
+        # Retry plot generation if failed
+        max_retry_attempts = 3
+        has_plot_generation_success, current_attempt = False, 0
+        while not has_plot_generation_success and current_attempt < max_retry_attempts:
+            try:
+                story_data_raw, story_data_obj = ctx.generation_model.generate_content(ctx, history)
+                story_data_obj["id"] = ctx.story_id
+                story_data_obj["generated_by"] = ctx.generation_model.model_name
+                story_data_obj["approach"] = ctx.approach
+                story_data = StoryData.model_validate(story_data_obj)
+                has_plot_generation_success = True
+            except Exception as e:
+                current_attempt += 1
+                logger.warning(f"Exception occurred while chat completion: {e}")
+
+        if not has_plot_generation_success or story_data_raw is None or story_data_obj is None:
+            logger.error(f"Failed to generate story data.")
+            logger.error(f"Story ID: {ctx.story_id}")
+            logger.error("Exiting...")
+            exit(1)
+
     else:
         with open(ctx.config.existing_plot, "r") as file:
-            content = json.load(file)
+            content = ujson.load(file)
             story_data_raw = content["raw"]
             story_data_obj = content["parsed"]
-
-    story_data_obj["id"] = ctx.story_id
-    story_data_obj["generated_by"] = os.getenv("GENERATION_MODEL")
-    story_data_obj["approach"] = ctx.approach
-    story_data = StoryData.from_dict(story_data_obj)
+            story_data = StoryData.model_validate(story_data_obj)
 
     if ctx.config.enable_image_generation and not ctx.config.existing_plot:
         logger.debug("Start character image generation")
@@ -74,9 +92,7 @@ def initialize_generation(ctx: GenerationContext):
     logger.debug("End story plot generation")
 
     with open(ctx.output_path / "plot.json", "w") as file:
-        file.write(
-            json.dumps({"raw": story_data_raw, "parsed": story_data.to_dict()}, indent=2)
-        )
+        ujson.dump({"raw": story_data_raw, "parsed": story_data.model_dump()}, file, indent=2)
 
     return initial_history, story_data
 

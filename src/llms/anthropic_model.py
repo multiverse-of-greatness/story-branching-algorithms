@@ -3,7 +3,8 @@ import os
 from json.decoder import JSONDecodeError
 from time import sleep
 
-from anthropic import Anthropic, APIConnectionError, RateLimitError, APIStatusError, APITimeoutError
+from anthropic import (Anthropic, APIConnectionError, APIStatusError,
+                       APITimeoutError, RateLimitError)
 from loguru import logger
 
 from src.llms.llm import LLM
@@ -17,8 +18,7 @@ from src.utils.openai_ai import append_openai_message
 
 class AnthropicModel(LLM):
     def __init__(self, model_name: str, max_tokens: int = 200000):
-        super().__init__(max_tokens)
-        self.model_name = model_name
+        super().__init__(model_name, max_tokens)
         self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"), timeout=60)
         self.max_tokens = max_tokens
 
