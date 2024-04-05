@@ -47,9 +47,9 @@ def initialize_generation(ctx: GenerationContext):
             except ValidationError as e:
                 current_attempt += 1
                 logger.warning(f"Validation error on chat completion response: {map_validation_errors_to_string(e)}")
-            # except Exception as e:
-            #     current_attempt += 1
-            #     logger.warning(f"Exception occurred while chat completion: {e}")
+            except Exception as e:
+                current_attempt += 1
+                logger.warning(f"Exception occurred while chat completion: {e}")
 
         if not has_plot_generation_success:
             logger.error(f"Failed to generate story data.")
