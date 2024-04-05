@@ -4,11 +4,13 @@ from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from src.types.openai import ConversationHistory
+from src.types.openai import (ConversationHistory, InputTokenCount,
+                              ModelResponse, OutputTokenCount)
 
 
 class LLM(ABC):
-    def __init__(self, max_tokens: int):
+    def __init__(self, model_name: str, max_tokens: int):
+        self.model_name = model_name
         self.max_tokens = max_tokens
 
     @staticmethod
@@ -68,7 +70,8 @@ class LLM(ABC):
             return history
 
     @abstractmethod
-    def generate_content(self, ctx: 'GenerationContext', messages: ConversationHistory) -> tuple[str, dict]:
+    def generate_content(self, messages: ConversationHistory) -> tuple[ConversationHistory, ModelResponse, 
+                                                                       InputTokenCount, OutputTokenCount]:
         pass
 
     @abstractmethod

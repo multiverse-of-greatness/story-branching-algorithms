@@ -1,7 +1,7 @@
-import json
 from pathlib import Path
 
 import typer
+import ujson
 from loguru import logger
 
 from src.models.story_data import StoryData
@@ -15,10 +15,10 @@ def validate_existing_plot(existing_plot_path: str):
     if existing_plot_path:
         try:
             with open(existing_plot_path, "r") as file:
-                content = json.load(file)
+                content = ujson.load(file)
                 story_data_obj = content["parsed"]
-                StoryData.from_json(story_data_obj)
-        except (json.JSONDecodeError, KeyError) as e:
+                StoryData.model_validate(story_data_obj)
+        except Exception as e:
             logger.error(f"Existing plot file not valid: {existing_plot_path}")
             logger.error(e)
             raise typer.Abort()

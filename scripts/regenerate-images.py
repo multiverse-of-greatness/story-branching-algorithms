@@ -6,11 +6,12 @@ import typer
 from dotenv import load_dotenv
 
 from src.bg_remover.bria import Bria
-from src.databases.neo4j import Neo4JConnector
+from src.database import Neo4J
 from src.models.story.character_data import CharacterData
 from src.models.story.scene_data import SceneData
-from src.prompts.image_prompts import get_character_image_prompt, get_scene_image_prompt
-from src.utils.general import get_image_from_base64, get_base64_from_image
+from src.prompts.image_prompts import (get_character_image_prompt,
+                                       get_scene_image_prompt)
+from src.utils.general import get_base64_from_image, get_image_from_base64
 from src.utils.generative_models import get_image_generation_model
 
 bria = Bria()
@@ -24,7 +25,7 @@ def _run_regenerate_images(session, story_id: str, for_characters: bool, for_sce
     if for_characters:
         main_characters = json.loads(result.get('n').get('main_characters'))
         for character in main_characters:
-            character_data = CharacterData.from_json(character)
+            character_data = CharacterData.model_validate(character)
             prompt = get_character_image_prompt(character_data)
             image = img_gen.generate_image_from_text_prompt(prompt)
             character['original_image'] = image
@@ -38,7 +39,7 @@ def _run_regenerate_images(session, story_id: str, for_characters: bool, for_sce
     if for_scenes:
         main_scenes = json.loads(result.get('n').get('main_scenes'))
         for scene in main_scenes:
-            scene_data = SceneData.from_json(scene)
+            scene_data = SceneData.model_validate(scene)
             prompt = get_scene_image_prompt(scene_data)
             image = img_gen.generate_image_from_text_prompt(prompt)
             scene['image'] = image
@@ -57,7 +58,7 @@ def _run_regenerate_images(session, story_id: str, for_characters: bool, for_sce
 
 @app.command()
 def regenerate_images(story_id: str, for_characters: bool = False, for_scenes: bool = False):
-    neo4j_connector = Neo4JConnector()
+    neo4j_connector = Neo4J()
     neo4j_connector.with_session(lambda session: _run_regenerate_images(session, story_id, for_characters, for_scenes))
 
 

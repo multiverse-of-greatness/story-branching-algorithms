@@ -2,9 +2,9 @@ from typing import Annotated
 
 import typer
 from dotenv import load_dotenv
-from neo4j import Session
 
-from src.databases.neo4j import Neo4JConnector
+from neo4j import Session
+from src.database import Neo4J
 
 
 def prune_story(session: Session, story_id: str):
@@ -13,12 +13,9 @@ def prune_story(session: Session, story_id: str):
 
 
 def main(
-        story_id: Annotated[
-            str, typer.Option(help="Story ID to prune")
-        ]
-):
-    db = Neo4JConnector()
-    db.with_session(prune_story, story_id)
+        story_id: Annotated[str, typer.Option(help="Story ID to prune")]):
+    database = Neo4J()
+    database.with_session(prune_story, story_id)
     print(f"Story {story_id} pruned")
 
 

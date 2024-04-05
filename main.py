@@ -7,7 +7,7 @@ from loguru import logger
 
 from src.batch_generation.core import (run_batch_generation,
                                        run_batch_generation_with_existing_plot)
-from src.generation.core import run_generation_with
+from src.generation.core import run_generation_with, run_resume_generation_with
 from src.models.enums.generation_approach import GenerationApproach
 from src.models.generation_config import GenerationConfig
 from src.utils.validators import validate_config, validate_existing_plot
@@ -64,11 +64,22 @@ def generate_story_with(
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
 
-    config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
-                              max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, enable_image_generation, existing_plot, seed)
+    config = GenerationConfig(
+        min_num_choices=min_num_choices, max_num_choices=max_num_choices,
+        min_num_choices_opportunity=min_num_choices_opportunity, max_num_choices_opportunity=max_num_choices_opportunity,
+        game_genre=game_genre, themes=themes, num_chapters=num_chapters, num_endings=num_endings,
+        num_main_characters=num_main_characters, num_main_scenes=num_main_scenes,
+        enable_image_generation=enable_image_generation, existing_plot=existing_plot, seed=seed
+    )
     logger.info(f"Generation config: {config}")
     run_generation_with(config, approach)
+
+
+@app.command()
+def resume_generation(
+        story_id: Annotated[str, typer.Option(help="Story ID to resume generation")],
+        approach: Annotated[Optional[GenerationApproach], typer.Option(help="Approach to be used")]):
+    run_resume_generation_with(story_id, approach)
 
 
 @app.command()
@@ -118,9 +129,13 @@ def batch_generation(
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
 
-    config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
-                              max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, enable_image_generation, None, seed)
+    config = GenerationConfig(
+        min_num_choices=min_num_choices, max_num_choices=max_num_choices,
+        min_num_choices_opportunity=min_num_choices_opportunity, max_num_choices_opportunity=max_num_choices_opportunity,
+        game_genre=game_genre, themes=themes, num_chapters=num_chapters, num_endings=num_endings,
+        num_main_characters=num_main_characters, num_main_scenes=num_main_scenes,
+        enable_image_generation=enable_image_generation, seed=seed
+    )
     logger.info(f"Generation config: {config}")
 
     if is_proposed_first:
