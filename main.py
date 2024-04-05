@@ -64,9 +64,13 @@ def generate_story_with(
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
 
-    config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
-                              max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, enable_image_generation, existing_plot, seed)
+    config = GenerationConfig(
+        min_num_choices=min_num_choices, max_num_choices=max_num_choices,
+        min_num_choices_opportunity=min_num_choices_opportunity, max_num_choices_opportunity=max_num_choices_opportunity,
+        game_genre=game_genre, themes=themes, num_chapters=num_chapters, num_endings=num_endings,
+        num_main_characters=num_main_characters, num_main_scenes=num_main_scenes,
+        enable_image_generation=enable_image_generation, existing_plot=existing_plot, seed=seed
+    )
     logger.info(f"Generation config: {config}")
     run_generation_with(config, approach)
 
@@ -118,9 +122,13 @@ def batch_generation(
     validate_config(min_num_choices, max_num_choices, min_num_choices_opportunity, max_num_choices_opportunity,
                     num_chapters, num_endings, num_main_characters, num_main_scenes)
 
-    config = GenerationConfig(min_num_choices, max_num_choices, min_num_choices_opportunity,
-                              max_num_choices_opportunity, game_genre, themes, num_chapters, num_endings,
-                              num_main_characters, num_main_scenes, enable_image_generation, None, seed)
+    config = GenerationConfig(
+        min_num_choices=min_num_choices, max_num_choices=max_num_choices,
+        min_num_choices_opportunity=min_num_choices_opportunity, max_num_choices_opportunity=max_num_choices_opportunity,
+        game_genre=game_genre, themes=themes, num_chapters=num_chapters, num_endings=num_endings,
+        num_main_characters=num_main_characters, num_main_scenes=num_main_scenes,
+        enable_image_generation=enable_image_generation, seed=seed
+    )
     logger.info(f"Generation config: {config}")
 
     if is_proposed_first:

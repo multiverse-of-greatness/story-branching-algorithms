@@ -1,6 +1,6 @@
 import copy
 import os
-from json.decoder import JSONDecodeError
+from ujson import JSONDecodeError
 from time import sleep
 
 from loguru import logger
@@ -32,8 +32,8 @@ class OpenAIModel(LLM):
         logger.debug(f"Starting chat completion with model: {self.model_name}")
 
         copied_messages = copy.deepcopy(messages)
-
         copied_messages = self.rolling_history(copied_messages)
+        response: str = None
 
         try:
             chat_completion = self.client.chat.completions.create(
@@ -51,9 +51,8 @@ class OpenAIModel(LLM):
             ctx.append_history_to_file(copied_messages)
 
             return response, parse_json_string(response)
-        except (ValueError, JSONDecodeError) as e:
-            logger.warning(f"OpenAI API response could not be decoded as JSON: {str(e)}")
-            raise e
+        except ValueError as e:
+            raise ValueError(f"OpenAI API response could not be decoded as JSON\n{str(e)}")
         except (APITimeoutError, APIConnectionError, RateLimitError, APIError) as e:
             logger.warning(f"OpenAI API error: {e}")
             sleep(3)
@@ -62,8 +61,7 @@ class OpenAIModel(LLM):
             logger.error(f"Unexpected error: {e}")
             raise e
 
-    def fix_invalid_json_generation(self, ctx: GenerationContext, old_response: str, error_msg: str) -> tuple[
-        str, dict]:
+    def fix_invalid_json_generation(self, ctx: GenerationContext, old_response: str, error_msg: str) -> tuple[str, dict]:
         fix_json_prompt = get_fix_invalid_json_prompt(old_response, error_msg)
         retry_history = append_openai_message("You are a helpful coding AI assistant.", "system")
         retry_history = append_openai_message(fix_json_prompt, "user", retry_history)

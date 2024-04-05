@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -13,7 +13,7 @@ class StoryChunk(BaseModel):
     story_so_far: str
     story: List[StoryNarrative]
     num_opportunities: int
-    history: ConversationHistory
+    history: Optional[ConversationHistory] = []
 
     def __str__(self):
         return (f"StoryChunk(id={self.id}, story_id={self.story_id}, chapter={self.chapter}, story_so_far={self.story_so_far}, "

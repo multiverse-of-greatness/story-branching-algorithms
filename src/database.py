@@ -1,4 +1,5 @@
 import os
+from typing import Callable
 
 from loguru import logger
 
@@ -19,6 +20,10 @@ class Neo4J:
         self.uri = os.getenv("NEO4J_URI")
         username, password = os.getenv("NEO4J_AUTH").split("/")
         self.driver = GraphDatabase.driver(self.uri, auth=(username, password))
+
+    def with_session(self, func: Callable, *args, **kwargs):
+        with self.driver.session() as session:
+            func(session, *args, **kwargs)
 
     def close(self):
         self.driver.close()

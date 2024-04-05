@@ -8,7 +8,7 @@ class CharacterData(BaseModel):
     first_name: str
     last_name: str
     species: str
-    age: int
+    age: str
     gender: str
     role: str
     background: str

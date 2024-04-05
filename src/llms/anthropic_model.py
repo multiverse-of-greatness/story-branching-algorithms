@@ -32,6 +32,7 @@ class AnthropicModel(LLM):
 
         copied_messages = self.rolling_history(copied_messages)
         copied_messages = map_openai_history_to_anthropic_history(copied_messages)
+        response: str = None
 
         try:
             chat_completion = self.client.messages.create(
@@ -48,9 +49,8 @@ class AnthropicModel(LLM):
             ctx.append_history_to_file(copied_messages)
 
             return response, parse_json_string(response)
-        except (ValueError, JSONDecodeError) as e:
-            logger.warning(f"Anthropic response could not be decoded as JSON: {str(e)}")
-            raise e
+        except ValueError as e:
+            raise ValueError(f"Anthropic response could not be decoded as JSON\n{str(e)}")
         except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as e:
             logger.warning(f"Anthropic error: {e}")
             sleep(3)

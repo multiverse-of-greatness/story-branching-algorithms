@@ -14,11 +14,10 @@ from src.models.enums.branching_type import BranchingType
 from src.models.enums.generation_approach import GenerationApproach
 from src.models.frontier_item import FrontierItem
 from src.models.generation_config import GenerationConfig
-from src.models.story.story_choice import StoryChoice
-from src.models.story_chunk import StoryChunk
 from src.repository import CommonRepository
 from src.types.algorithm import Frontiers
 from src.types.openai import ConversationHistory
+from src.utils.general import json_dumps_list
 
 
 class GenerationContext:
@@ -36,7 +35,7 @@ class GenerationContext:
         self.output_path = Path("outputs") / self.approach.value / self.story_id
         self.output_path.mkdir(exist_ok=True, parents=True)
         self._initial_history: Optional[ConversationHistory] = None
-        self._frontiers: Frontiers = [FrontierItem(1, 0, None, None, BranchingType.BRANCHING)]
+        self._frontiers: Frontiers = [FrontierItem(current_chapter=1, used_choice_opportunity=0, state=BranchingType.BRANCHING)]
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.completed_at: Optional[datetime] = None
@@ -53,19 +52,19 @@ class GenerationContext:
         responses["prompt_tokens"] += prompt_tokens
         responses["completion_tokens"] += completion_tokens
 
-        with open(file_output_path, "w") as f:
-            f.write(ujson.dumps(responses, indent=2))
+        with open(file_output_path, "w") as file:
+            ujson.dump(responses, file, indent=2)
 
-    def append_history_to_file(self, history: ConversationHistory | Iterable[MessageParam]):
+    def append_history_to_file(self, history: ConversationHistory):
         with open(self.output_path / "histories.json", "r+") as file:
             histories = ujson.load(file)
             histories["histories"] += [history]
             file.seek(0)
-            file.write(ujson.dumps(histories, indent=2))
+            ujson.dump(histories, file, indent=2)
 
     def sync_file(self):
         with open(self.output_path / "context.json", "w") as file:
-            file.write(ujson.dumps(self.to_dict(), indent=2))
+            ujson.dump(self.to_dict(), file, indent=2)
 
     def get_initial_history(self):
         return self._initial_history
@@ -95,7 +94,7 @@ class GenerationContext:
                   image_generation_model: Optional[ImageGenModel],
                   background_removal_model: BackgroundRemovalModel) -> 'GenerationContext':
         ctx = GenerationContext(repository, generation_model, image_generation_model, background_removal_model,
-                                GenerationConfig.from_json(data_obj['config']), GenerationApproach(data_obj['approach']),
+                                GenerationConfig.model_validate(data_obj['config']), GenerationApproach(data_obj['approach']),
                                 data_obj['story_id'])
         ctx.is_generation_completed = data_obj['is_generation_completed']
         ctx.created_at = datetime.fromisoformat(data_obj['created_at'])
@@ -112,12 +111,12 @@ class GenerationContext:
             'image_generation_model': str(self.image_gen_model) if self.config.enable_image_generation else "N/A",
             'background_removal_model': str(self.background_remover_model),
             'approach': self.approach.value,
-            'config': self.config.to_json(),
+            'config': self.config.model_dump(),
             'story_id': self.story_id,
             'is_generation_completed': self.is_generation_completed,
             'output_path': str(self.output_path),
             'initial_history': self._initial_history,
-            'frontiers': [item.to_dict() for item in self._frontiers],
+            'frontiers': json_dumps_list(self._frontiers),
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'completed_at': self.completed_at.isoformat() if self.completed_at else None

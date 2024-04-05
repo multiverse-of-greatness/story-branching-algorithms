@@ -1,6 +1,5 @@
 import copy
 import os
-from json import JSONDecodeError
 from time import sleep
 
 import google.generativeai as genai
@@ -49,6 +48,7 @@ class GoogleModel(LLM):
 
         copied_messages = map_openai_history_to_google_history(copied_messages)
         chat = self.client.start_chat(history=copied_messages)
+        response: str = None
 
         try:
             chat_completion = chat.send_message(current_message, safety_settings={
@@ -68,20 +68,17 @@ class GoogleModel(LLM):
             ctx.append_history_to_file(map_google_history_to_openai_history(copied_messages))
 
             return response, parse_json_string(response)
-        except (ValueError, JSONDecodeError) as e:
-            logger.warning(f"Gemini 1.0 Pro response could not be decoded as JSON: {str(e)}")
-            sleep(3)
-            return self.generate_content(ctx, messages)
+        except ValueError as e:
+            raise ValueError(f"Google API response could not be decoded as JSON\n{str(e)}")
         except (ServiceUnavailable, InternalServerError, TooManyRequests, DeadlineExceeded) as e:
-            logger.warning(f"Gemini 1.0 Pro API error: {e}")
+            logger.warning(f"Google API error: {e}")
             sleep(3)
             return self.generate_content(ctx, messages)
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise e
 
-    def fix_invalid_json_generation(self, ctx: GenerationContext, old_response: str, error_msg: str) -> tuple[
-        str, dict]:
+    def fix_invalid_json_generation(self, ctx: GenerationContext, old_response: str, error_msg: str) -> tuple[str, dict]:
         fix_json_prompt = get_fix_invalid_json_prompt(old_response, error_msg)
         retry_history = append_openai_message(fix_json_prompt, "user")
         logger.warning(f"Retrying with: {retry_history}")
@@ -89,4 +86,4 @@ class GoogleModel(LLM):
         return self.generate_content(ctx, retry_history)
 
     def __str__(self):
-        return f"GeminiOnePro(model_name={self.model_name}, max_tokens={self.max_tokens})"
+        return f"GoogleModel(model_name={self.model_name}, max_tokens={self.max_tokens})"

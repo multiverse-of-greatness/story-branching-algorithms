@@ -5,6 +5,7 @@ from src.database import Neo4J
 from src.models.story_branch import StoryBranch
 from src.models.story_chunk import StoryChunk
 from src.models.story_data import StoryData
+from src.utils.general import json_dumps_list
 
 
 class CommonRepository:
@@ -39,8 +40,8 @@ class CommonRepository:
                 id=story_chunk.id,
                 chapter=story_chunk.chapter,
                 story_so_far=story_chunk.story_so_far,
-                story=ujson.dumps([n.model_dump() for n in story_chunk.story]),
-                history=story_chunk.history,
+                story=json_dumps_list(story_chunk.story),
+                history=ujson.dumps(story_chunk.history),
                 story_id=story_chunk.story_id,
                 num_opportunities=story_chunk.num_opportunities,
             )
@@ -54,10 +55,10 @@ class CommonRepository:
                  "synopsis: $synopsis, chapter_synopses: $chapter_synopses, "
                  "beginning: $beginning, endings: $endings, generated_by: $generated_by, approach: $approach})"),
                 id=story_data.id, title=story_data.title, genre=story_data.genre, themes=story_data.themes,
-                main_scenes=ujson.dumps([s.model_dump() for s in story_data.main_scenes]),
-                main_characters=ujson.dumps([c.model_dump() for c in story_data.main_characters]), synopsis=story_data.synopsis,
-                chapter_synopses=ujson.dumps([c.model_dump() for c in story_data.chapter_synopses]), beginning=story_data.beginning,
-                endings=ujson.dumps([e.model_dump() for e in story_data.endings]), generated_by=story_data.generated_by,
+                main_scenes=json_dumps_list(story_data.main_scenes),
+                main_characters=json_dumps_list(story_data.main_characters), synopsis=story_data.synopsis,
+                chapter_synopses=json_dumps_list(story_data.chapter_synopses), beginning=story_data.beginning,
+                endings=json_dumps_list(story_data.endings), generated_by=story_data.generated_by,
                 approach=story_data.approach.value
             )
         logger.info(f"StoryData {story_data.id} created")
