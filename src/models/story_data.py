@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 from pydantic import BaseModel
@@ -22,3 +23,7 @@ class StoryData(BaseModel):
     endings: List[EndingData]
     generated_by: str
     approach: GenerationApproach
+
+    @property
+    def existing_plot_path(self) -> Path:
+        return Path("outputs") / self.approach.value / self.id / "plot.json"

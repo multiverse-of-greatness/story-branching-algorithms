@@ -7,7 +7,7 @@ from loguru import logger
 
 from src.batch_generation.core import (run_batch_generation,
                                        run_batch_generation_with_existing_plot)
-from src.generation.core import run_generation_with
+from src.generation.core import run_generation_with, run_resume_generation_with
 from src.models.enums.generation_approach import GenerationApproach
 from src.models.generation_config import GenerationConfig
 from src.utils.validators import validate_config, validate_existing_plot
@@ -73,6 +73,13 @@ def generate_story_with(
     )
     logger.info(f"Generation config: {config}")
     run_generation_with(config, approach)
+
+
+@app.command()
+def resume_generation(
+        story_id: Annotated[str, typer.Option(help="Story ID to resume generation")],
+        approach: Annotated[Optional[GenerationApproach], typer.Option(help="Approach to be used")]):
+    run_resume_generation_with(story_id, approach)
 
 
 @app.command()

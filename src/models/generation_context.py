@@ -6,6 +6,7 @@ from typing import Iterable, Optional
 
 import ujson
 from anthropic.types import MessageParam
+from loguru import logger
 
 from src.bg_remover.bg_removal_model import BackgroundRemovalModel
 from src.image_gen.image_gen_model import ImageGenModel
@@ -14,20 +15,16 @@ from src.models.enums.branching_type import BranchingType
 from src.models.enums.generation_approach import GenerationApproach
 from src.models.frontier_item import FrontierItem
 from src.models.generation_config import GenerationConfig
+from src.prompts.utility_prompts import get_fix_invalid_json_prompt
 from src.repository import CommonRepository
 from src.types.algorithm import Frontiers
 from src.types.openai import ConversationHistory
-from src.utils.general import json_dumps_list
+from src.utils.general import parse_json_string
+from src.utils.openai_ai import append_openai_message
 
 
 class GenerationContext:
-    def __init__(self, repository: CommonRepository, generation_model: LLM,
-                 image_generation_model: Optional[ImageGenModel], background_removal_model: BackgroundRemovalModel,
-                 approach: GenerationApproach, config: GenerationConfig, story_id: str = None):
-        self.repository = repository
-        self.generation_model = generation_model
-        self.image_gen_model = image_generation_model
-        self.background_remover_model = background_removal_model
+    def __init__(self, approach: GenerationApproach, config: GenerationConfig, story_id: str = None):
         self.approach = approach
         self.config = config
         self.story_id = story_id if story_id is not None else str(uuid.uuid1())
@@ -38,6 +35,10 @@ class GenerationContext:
         self._frontiers: Frontiers = [FrontierItem(current_chapter=1, used_choice_opportunity=0, state=BranchingType.BRANCHING)]
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
+        self.repository: Optional[CommonRepository] = None
+        self.generation_model: Optional[LLM] = None
+        self.image_generation_model: Optional[ImageGenModel] = None
+        self.background_remover_model: Optional[BackgroundRemovalModel] = None
         self.completed_at: Optional[datetime] = None
 
     def append_response_to_file(self, model_name: str, response: str, prompt_tokens: int, completion_tokens: int):
@@ -55,12 +56,33 @@ class GenerationContext:
         with open(file_output_path, "w") as file:
             ujson.dump(responses, file, indent=2)
 
-    def append_history_to_file(self, history: ConversationHistory):
+    def append_history_to_file(self, history: ConversationHistory | Iterable[MessageParam]):
         with open(self.output_path / "histories.json", "r+") as file:
             histories = ujson.load(file)
             histories["histories"] += [history]
             file.seek(0)
             ujson.dump(histories, file, indent=2)
+
+    def generate_content(self, messages: ConversationHistory) -> tuple[str, dict]:
+        history, response, input_tokens, output_tokens = self.generation_model.generate_content(messages)
+
+        self.append_response_to_file(self.generation_model.model_name, response, input_tokens, output_tokens)
+        self.append_history_to_file(history)
+
+        try:
+            return response, parse_json_string(response)
+        except ValueError as e:
+            raise ValueError(f"Chat completion response could not be decoded as JSON\n{str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            raise e
+    
+    def fix_invalid_json_generation(self, old_response: str, error_msg: str) -> tuple[str, dict]:
+        fix_json_prompt = get_fix_invalid_json_prompt(old_response, error_msg)
+        retry_history = append_openai_message("You are a helpful coding AI assistant.", "system")
+        retry_history = append_openai_message(fix_json_prompt, "user", retry_history)
+        logger.warning(f"Retrying with: {retry_history}")
+        return self.generate_content(retry_history)
 
     def sync_file(self):
         with open(self.output_path / "context.json", "w") as file:
@@ -90,43 +112,33 @@ class GenerationContext:
         self.sync_file()
 
     @staticmethod
-    def from_dict(data_obj: dict, repository: CommonRepository, generation_model: LLM,
-                  image_generation_model: Optional[ImageGenModel],
-                  background_removal_model: BackgroundRemovalModel) -> 'GenerationContext':
-        ctx = GenerationContext(repository, generation_model, image_generation_model, background_removal_model,
-                                GenerationConfig.model_validate(data_obj['config']), GenerationApproach(data_obj['approach']),
+    def from_dict(data_obj: dict):
+        ctx = GenerationContext(GenerationApproach(data_obj['approach']),
+                                GenerationConfig.model_validate(data_obj['config']),
                                 data_obj['story_id'])
         ctx.is_generation_completed = data_obj['is_generation_completed']
         ctx.created_at = datetime.fromisoformat(data_obj['created_at'])
         ctx.updated_at = datetime.fromisoformat(data_obj['updated_at'])
-        ctx.completed_at = datetime.fromisoformat(data_obj['completed_at']) if not data_obj.get('completed_at') else None
+        ctx.completed_at = None if not data_obj.get('completed_at') else datetime.fromisoformat(data_obj['completed_at'])
         ctx._initial_history = data_obj['initial_history']
-        ctx._frontiers = []
+        ctx._frontiers = [FrontierItem.model_validate(item) for item in data_obj["frontiers"]]
         return ctx
 
     def to_dict(self) -> dict:
         return {
-            'repository': str(self.repository),
-            'generation_model': str(self.generation_model),
-            'image_generation_model': str(self.image_gen_model) if self.config.enable_image_generation else "N/A",
-            'background_removal_model': str(self.background_remover_model),
             'approach': self.approach.value,
             'config': self.config.model_dump(),
             'story_id': self.story_id,
             'is_generation_completed': self.is_generation_completed,
             'output_path': str(self.output_path),
             'initial_history': self._initial_history,
-            'frontiers': json_dumps_list(self._frontiers),
+            'frontiers': [item.model_dump() for item in self._frontiers],
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+            'completed_at': None if not self.completed_at else self.completed_at.isoformat()
         }
 
     def __str__(self):
-        return (f"GenerationContext(repository={self.repository}, generation_model={self.generation_model}, "
-                f"image_generation_model={self.image_gen_model}, "
-                f"background_removal_model={self.background_remover_model}, approach={self.approach}, "
-                f"config={self.config}, story_id={self.story_id}, output_path={self.output_path}, "
-                f"is_generation_completed={self.is_generation_completed}, initial_history={self._initial_history}, "
-                f"frontiers={self._frontiers}, created_at={self.created_at}, updated_at={self.updated_at}, "
+        return (f"GenerationContext(approach={self.approach.value}, config={self.config}, story_id={self.story_id}, output_path={self.output_path}, "
+                f"is_generation_completed={self.is_generation_completed}, created_at={self.created_at}, updated_at={self.updated_at}, "
                 f"completed_at={self.completed_at})")

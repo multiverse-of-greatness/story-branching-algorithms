@@ -69,7 +69,7 @@ class LLM(ABC):
             return history
 
     @abstractmethod
-    def generate_content(self, ctx: 'GenerationContext', messages: ConversationHistory) -> tuple[str, dict]:
+    def generate_content(self, messages: ConversationHistory) -> tuple[ConversationHistory, str, int, int]:
         pass
 
     @abstractmethod
