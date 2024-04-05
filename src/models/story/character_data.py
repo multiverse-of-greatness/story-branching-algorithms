@@ -1,6 +1,5 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
+from typing_extensions import List, Optional
 
 
 class CharacterData(BaseModel):

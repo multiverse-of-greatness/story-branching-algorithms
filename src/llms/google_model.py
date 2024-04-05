@@ -10,7 +10,7 @@ from google.generativeai.types import HarmBlockThreshold, HarmCategory
 from loguru import logger
 
 from src.llms.llm import LLM
-from src.types.openai import ConversationHistory
+from src.types.openai import ConversationHistory, ModelResponse, InputTokenCount, OutputTokenCount
 from src.utils.google_ai import (map_google_history_to_openai_history,
                                  map_openai_history_to_google_history)
 
@@ -39,7 +39,8 @@ class GoogleModel(LLM):
             history += f"{message.parts[0].text} "
         return history
 
-    def generate_content(self, messages: ConversationHistory) -> tuple[ConversationHistory, str, int, int]:
+    def generate_content(self, messages: ConversationHistory) -> tuple[ConversationHistory, ModelResponse, 
+                                                                       InputTokenCount, OutputTokenCount]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
 
         copied_messages: ConversationHistory = copy.deepcopy(messages)

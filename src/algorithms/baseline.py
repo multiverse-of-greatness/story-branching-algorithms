@@ -34,7 +34,7 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
         history: ConversationHistory = ctx.get_initial_history()
         history = append_openai_message(prompt, history=history)
 
-        # Retry chunk generation if failed
+        # Generate chunk until success or max retry attempts
         max_retry_attempts = 3
         has_chunk_generation_success, current_attempt = False, 0
         story_chunk_obj, story_chunk, choices = None, None, None
@@ -81,7 +81,7 @@ def process_generation_queue(ctx: GenerationContext, story_data: StoryData):
         child_chunks: list[FrontierItem] = []
         if item.state is BranchingType.BRANCHING:
             if item.used_choice_opportunity < ctx.config.max_num_choices_opportunity:  # Branch to multiple choices
-                for choice in choices[:current_num_choices]:
+                for choice in choices:
                     child_chunks.append(
                         FrontierItem(current_chapter=item.current_chapter, used_choice_opportunity=item.used_choice_opportunity + 1, 
                                      parent_chunk=story_chunk, choice=choice, state=BranchingType.BRANCHING)

@@ -32,7 +32,7 @@ def initialize_generation(ctx: GenerationContext):
     story_data_raw, story_data_obj, story_data = None, None, None
 
     if not ctx.config.existing_plot:
-        # Retry plot generation if failed
+        # Generate plot until success or max retry attempts
         max_retry_attempts = 3
         has_plot_generation_success, current_attempt = False, 0
         while not has_plot_generation_success and current_attempt < max_retry_attempts:

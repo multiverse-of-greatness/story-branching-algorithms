@@ -1,6 +1,5 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
+from typing_extensions import List, Optional
 
 from src.models.story.story_narrative import StoryNarrative
 from src.types.openai import ConversationHistory

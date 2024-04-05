@@ -10,7 +10,8 @@ from typing_extensions import Optional
 
 from src.llms.llm import LLM
 from src.models.generation_context import GenerationContext
-from src.types.openai import ConversationHistory
+from src.types.openai import (ConversationHistory, InputTokenCount,
+                              ModelResponse, OutputTokenCount)
 
 
 class OpenAIModel(LLM):
@@ -24,7 +25,8 @@ class OpenAIModel(LLM):
         encoder = encoding_for_model(os.getenv("GENERATION_MODEL"))
         return len(encoder.encode(message))
 
-    def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[ConversationHistory, str, int, int]:
+    def generate_content(self, ctx: GenerationContext, messages: ConversationHistory) -> tuple[ConversationHistory, ModelResponse, 
+                                                                                               InputTokenCount, OutputTokenCount]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
 
         copied_messages = copy.deepcopy(messages)

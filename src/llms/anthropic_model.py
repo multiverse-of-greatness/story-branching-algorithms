@@ -7,7 +7,8 @@ from anthropic import (Anthropic, APIConnectionError, APIStatusError,
 from loguru import logger
 
 from src.llms.llm import LLM
-from src.types.openai import ConversationHistory
+from src.types.openai import (ConversationHistory, InputTokenCount,
+                              ModelResponse, OutputTokenCount)
 from src.utils.anthropic_ai import map_openai_history_to_anthropic_history
 
 
@@ -20,7 +21,8 @@ class AnthropicModel(LLM):
     def count_token(self, message: str) -> int:
         return self.client.count_tokens(message)
 
-    def generate_content(self, messages: ConversationHistory) -> tuple[ConversationHistory, str, int, int]:
+    def generate_content(self, messages: ConversationHistory) -> tuple[ConversationHistory, ModelResponse, 
+                                                                       InputTokenCount, OutputTokenCount]:
         logger.debug(f"Starting chat completion with model: {self.model_name}")
 
         copied_messages = copy.deepcopy(messages)

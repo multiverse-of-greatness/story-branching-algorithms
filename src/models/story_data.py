@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import List
 
 from pydantic import BaseModel
+from typing_extensions import List
 
 from src.models.enums.generation_approach import GenerationApproach
 from src.models.story.chapter_synopsis import ChapterSynopsis
